@@ -91,7 +91,7 @@ newtype Compose m n a = Compose (m (n a))
 type MLens m s a = forall f. Traversable f => (a -> Compose m f a) -> s -> Compose m f s
 ```
 
-And here is how we might define a monadic lens:
+And here is how we might define a mutating lens:
 
 ```haskell
 ixM :: (V.MVector v a, PrimMonad m) => Int -> MLens m (v (PrimState m) a) a
