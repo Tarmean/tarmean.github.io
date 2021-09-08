@@ -277,7 +277,7 @@ This forbids things like the `std::map::operator[]` from C++ which inserts a def
 I haven't noticed huge issues, but there are some annoyances.
 
 First, the duplicate lens commands. The implementation for `overM` is different from `over`. If the monad is Coercible the code duplication might be manageable? Either way it's not a huge issue but I'd rather not duplicate all lens operators.
-Secondly, we always perform the read step. For `setM` this isn't necessary. For mutable arrays GHC is hopefully smart enough to remove dead reads, though the index checking might not be removable. For complex things like hashmaps we can split out a resolving step which retrieves the correct slot and read/write on that slot. This runs into the lvalue problem, but it's usually representable as an array with offset.
+Secondly, we always perform the read step. For `setM` this isn't necessary. For mutable arrays GHC is hopefully smart enough to remove dead reads<sup>[2](#footnote2)</sup>, though the index checking might not be removable. For complex things like hashmaps we can split out a resolving step which retrieves the correct slot and read/write on that slot. This runs into the lvalue problem, but it's usually representable as an array with offset.
 
 Not really a problem but it's nice to mix mutable lenses with a state monad to hold the top-level values. This state monad could be interpreted as storage for local variables. For things like resizable vectors this prevents us from accidentally reusing an old, now reallocated, version - though linear types would be safer. Adding mutable lens operators that work with state monads adds even more code duplication, though.
 
@@ -291,6 +291,7 @@ The [mutable package](https://hackage.haskell.org/package/mutable) has lens-like
 If there are other relevant approaches, or thoughts on this approach, I'd love to hear about them. Thanks for reading!
 
 
-## Footnote
+## Footnotes
 
 <a name="footnote1">1</a>: Some people will give me side-eye about the `M ()` type. The algorithm relies on deferring invariants so valid-by-construction types don't work. And extracting small named invariant-repairing functions is good for readability, actually. Thank you for coming to my ~~TED talk~~ tangent.
+<a name="footnote2">2</a>: Update: Apparently the native codegen isn't smart enough. This should also affect e.g. unboxed vectors if you only use some fields
