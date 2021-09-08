@@ -254,7 +254,7 @@ setM l v s
 ```haskell
 setM l v s
 v' <- viewM l s
-assert (l == l')
+assert (v == v')
 ```
 
 ##### Dead Reads
