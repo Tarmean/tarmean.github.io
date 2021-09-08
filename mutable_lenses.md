@@ -242,7 +242,7 @@ Not really a problem but it's nice to mix mutable lenses with a state monad to h
 ## References
 
 I found the answers on [this stackoverflow question](https://stackoverflow.com/questions/18794745/can-i-make-a-lens-with-a-monad-constraint) a great starting point. As-is it doesn't quite allow nested composition and interop with normal lenses, though.
-There are many approaches to monadic lenses, like bidirectional transformations or the [following blog post](https://github.com/effectfully-ou/sketches/tree/master/extensible-monadic-lenses). Pretty much no relation, these lenses aren't monadic.
+There are many approaches to monadic lenses, like bidirectional transformations or the [following blog post](https://github.com/effectfully-ou/sketches/tree/master/extensible-monadic-lenses). Pretty much no relation, mutable lenses aren't monadic.
 There is a [mutable-lens package](https://hackage.haskell.org/package/mutable-lens) but indexing into a mutable vector isn't a lens .
 The [mutable package](https://hackage.haskell.org/package/mutable) has lens-like combinators but lacks interop with lenses.
 
