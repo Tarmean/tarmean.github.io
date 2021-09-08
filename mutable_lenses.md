@@ -16,8 +16,8 @@ This implementation is nominally pure - a State monad carrying nested maps - to 
 normalizeClassNodes :: M ()
     normalizeClassNodes =
     forOfM (egg . #classes . each . #nodes) $ \nodes ->  do
-    nodes' <- traverse normalize nodes
-    pure $ uniqSorted $ sort nodes'
+        nodes' <- traverse normalize nodes
+        pure $ uniqSorted $ sort nodes'
 ```
 
 (Some people will give me side-eye about the `M ()` type. The algorithm relies on deferring invariants so valid-by-construction types don't work, and indexed types are awkward in general. And extracting small named invariant-repairing functions is good for readability, actually. Thank you for coming to my ~~TED talk~~ tangent.)  
