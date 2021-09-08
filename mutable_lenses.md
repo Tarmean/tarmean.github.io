@@ -2,7 +2,7 @@
 
 Summary: I will be sad about the state of mutable Haskell for a bit. Then we will
 figure out how to mix lenses with mutable state.
-Also, that the real mutable borrows were the pure values that we made along the way or something.
+And learn that the real mutable borrows were the pure values that we made along the way, kind of.
 
 ## Imperative Haskell
 
