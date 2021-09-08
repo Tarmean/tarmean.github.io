@@ -191,12 +191,14 @@ The main difference from the previous mutating lenses is that we always return a
 
 
 ```haskell
-type LValLens m s a = forall f. Traversable f => (a -> Compose m f a) -> s -> Compose m (Const (f ())) s
+type LValLens m s a = forall f. Traversable f => (a -> Compose m f a) -> s -> Compose m f ()
 ```
 
-The key thing is the extra `Const` in the return type `Compose m (Const (f ())) s`, which suppresses the update code of the outer lens. During updates we use `f ~ Identity`. After inlining `Compose m (Const (Identity ())) s` is equivalent to `m ()`, skipping the update on the outer part. During reading we get `f ~ Const a`, so we get `Compose m (Const (Const a ())) s`. After inlining this is `m a`, flattening the nested `Const`.
+That's just a normal lens that returns unit! But we must do some more work to make this compose. If we write our lenses in CPS then `f . g` means that `g` cannot affect the behaviour of `f`. But that is exactly what we need - some way to suppress the update code from `f`. Instead, we use a different function composition that injects a newtype before passing back to f. 
+ 
+ The key thing is the extra `Const` in the return type `Compose m (Const (f ())) s`, which suppresses the update code of the outer lens. During updates we use `f ~ Identity`. After inlining `Compose m (Const (Identity ())) s` is equivalent to `m ()`, skipping the update on the outer part. During reading we get `f ~ Const a`, so we get `Compose m (Const (Const a ())) s`. After inlining this is `m a`, flattening the nested `Const`.
 
-This doesn't quite work when composing with other lenses - with function composition the inner lens cannot control if the outer updates  - so we need a different composition operator:
+The composition operator is easy to write. If you let GHC complete the type signature:
 
 
 ```haskell
@@ -214,7 +216,7 @@ This doesn't quite work when composing with other lenses - with function composi
 ```
 
 
-It's beautiful. Well, it brings tears to my eyes at any rate. But at its core it's almost normal lens composition, adding a Const layer before we return to the outer lens.
+There is something to be said about definitions that wrangle a single newtype but have a multi-line type signature. I'm just not sure what. Just focus on the fact that it's almost normal lens composition, adding a Const layer before we return to the outer lens.
 
 As a preview for next time, here is a usage example on a 5x3x3 vector which is a newtype on an unboxed vector:
 
