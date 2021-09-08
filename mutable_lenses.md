@@ -293,4 +293,4 @@ If there are other relevant approaches, or thoughts on this approach, I'd love t
 
 ## Footnote
 
-<a name="footnote1">1</a>: Some people will give me side-eye about the `M ()` type. The algorithm relies on deferring invariants so valid-by-construction types don't work, and indexed types are awkward in general. And extracting small named invariant-repairing functions is good for readability, actually. Thank you for coming to my ~~TED talk~~ tangent.
+<a name="footnote1">1</a>: Some people will give me side-eye about the `M ()` type. The algorithm relies on deferring invariants so valid-by-construction types don't work. And extracting small named invariant-repairing functions is good for readability, actually. Thank you for coming to my ~~TED talk~~ tangent.
