@@ -7,7 +7,7 @@ And learn that the real mutable borrows were the pure values that we made along 
 ## Imperative Haskell
 
 Haskell is sometimes referred to as the 'Best Imperative Programming Language'. Jokingly. I assume.  
-But it does have a ring of truth to it. Especially for algorithms I quite enjoy writing lens-y, state-y, backtracking-y, pseudo-imperative~~-y~~ code. This post started with me writing a naive e-graph implementation based on [egg](https://github.com/egraphs-good/egg/) in Haskell to figure out how it works.
+But it does have a ring of truth to it. Especially for algorithms I quite enjoy writing lens-y, state-y, backtracking-y, pseudo-imperative ~~-y~~ code. This post started with me writing a naive e-graph implementation based on [egg](https://github.com/egraphs-good/egg/) in Haskell to figure out how it works.
 
 Here is a tiny function which fixes an invariant, namely some lists being normalized and sorted.  
 This implementation is nominally pure - a State monad carrying nested maps - to act as a baseline for something more efficient<sup id="a1">[1](#f1)</sup>.
