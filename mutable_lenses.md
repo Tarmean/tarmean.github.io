@@ -125,7 +125,7 @@ I think it is worth pausing briefly to make some distinctions. So far, we have b
 
 Here is an example of what monadic lenses could do, and mutable lenses very much can't:
 
-Imagine we have a container holding an `Int` field `count`, and a map of values. A monadic lens could read this `count` field, read the first `count` elements of a map, and return a list of them. This gives us a compound result - we can read from different lenses, perform control flow, and aggregate the result. This is extremely powerful but makes updating hard.
+Imagine we have a container holding an `Int` field `count`, and a map of values. A monadic lens could read this `count` field, read the first `count` elements of the map, and return a list of them. This gives us a compound result - we can read from different lenses, perform control flow, and aggregate the result. This is extremely powerful but makes updating hard.
 
 When updating, the length of the list may have changed. Some elements may have been inserted or deleted. Elements might even be reordered. Updating `count` is easy - we can use the length of the updated list - but the rest may require some sophisticated diffing process. We must be able to project an updated value from the updated compound state for each lens that we used. But often there can be many solutions without a clear best choice. [This blog about monadic profunctors](https://blog.poisson.chat/posts/2017-01-01-monadic-profunctors.html) is a great introduction to one nice approach in Haskell.
 
