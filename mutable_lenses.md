@@ -1,4 +1,4 @@
-# Mutant Lenses
+# Mutable Lenses
 
 Summary: I will be sad about the state of mutable Haskell for a bit. Then we will
 figure out how to mix lenses with mutable state.
