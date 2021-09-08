@@ -221,10 +221,10 @@ As a preview for next time, here is a usage example on a 5x3x3 vector which is a
 
 ```haskell
 someLookup :: PrimMonad m => DimV VU.MVector (PrimState m) '[5,3,3] (Int, Bool) -> m Int
-someLookup = viewM (ixM 1 .$ ixM 2 .$ ixM 0 . _2)
+someLookup = viewM (ixM 1 .$ ixM 2 .$ ixM 0 . _1)
 
 anUpdate :: PrimMonad m => DimV VU.MVector (PrimState m) '[5,3,3] (Int, Bool) -> m ()
-anUpdate = overM (ixM 1 .$ ixM 2 .$ ixM 0 . _2) (+1)
+anUpdate = overM (ixM 1 .$ ixM 2 .$ ixM 0 . _1) (+1)
 ```
 
 ## Law of the land
