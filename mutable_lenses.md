@@ -198,7 +198,7 @@ That's just a normal mutable lens that returns unit! But we must do some more wo
  
  The outer lens sees the return type `Compose m (Const (f ())) s`, where the `Const` means the outer lens will never see an updated value. During updates we use `f ~ Identity`. After inlining `Compose m (Const (Identity ())) s` is equivalent to `m ()`, skipping the update on the outer part. During reading we get `f ~ Const a`, so we get `Compose m (Const (Const a ())) s`. After inlining this is `m a`, flattening the nested `Const`.
 
-The composition operator is easy to write. If you let GHC complete the type signature:
+The composition operator is easy to write. If you let GHC complete the type signature, that is.
 
 
 ```haskell
