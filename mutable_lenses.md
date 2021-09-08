@@ -2,7 +2,7 @@
 
 Summary: I will be sad about the state of mutable Haskell for a bit. Then we will
 figure out how to mix lenses with mutable state.
-Also that the real mutable borrows were the pure values that we made along the way, or something.
+Also, that the real mutable borrows were the pure values that we made along the way or something.
 
 ## Imperative Haskell
 
@@ -31,7 +31,7 @@ Here is the corresponding Rust, for comparison:
                 class.nodes.dedup();
                 ...
 
-The Rust code is pretty similar, point to the Imperative Haskell proponents. The Rust code, unfortunately, is also orders of magnitudes faster.
+The Rust code is quite similar, point to the Imperative Haskell proponents. The Rust code, unfortunately, is also orders of magnitudes faster.
 
 ## *Fast* Imperative Haskell
 
@@ -53,7 +53,7 @@ Our original Haskell code was pretty much imperative already - how bad could wri
 
 I could keep going but I feel like the pattern is clear. Haskell has amazing support for abstractions, and some great ideas like fast streaming and unpacked vectors. But a lot of infrastructure is missing polish and mutable anything lacks support. There are some glimmers of hope like linear types and Backpack, but they aren't ready for prime time yet.
 
-But grumbling over, that won't help us build nice imperative code. For this post lets try to build a reasonably efficient and uniform interface that works across mutable and pure data.
+But grumbling over, that won't help us build nice imperative code. For this post let's try to build a reasonably efficient and uniform interface that works across mutable and pure data.
 
 ## Mutating Lenses
 
@@ -93,26 +93,26 @@ And here is how we might define a monadic lens:
       -- (fmap is ignored during getting)
       pure (v <$ tu) :: m (t (v (PrimState m) a))
 
-This let's us instantiate as
+This lets us instantiate as
 
     (a -> m a) -> s -> m s -- monadic update
     (a -> m b) -> s -> m b -- monadic read (and other non-updating effects)
 
 
-This was all pretty rushed, so don't worry if not every detail is clear. 
+This was rushed, so don't worry if not every detail is clear. 
 Important is that this gives us a uniform interface, lets us interact with normal lenses, and assuming linear mutable state has sane behaviour.
 
-But we return the original vector and this pseudo update will cascade all the way to the top. This is because haskell doesn't really understand the concept of a memory location - we only get values. Lenses act on values, so if we use lenses we cannot distinguish between updating a memory location or a value.
+But we return the original vector, and this pseudo update will cascade all the way to the top. This is because Haskell doesn't really understand the concept of a memory location - we only get values. Lenses act on values. If we use lenses, then we cannot distinguish between updating a memory location or a value.
 
 ## Mutable, Not Monadic
 
-I think it is worth pausing briefly to make some distinctions. So far, we have build lenses that contain a monad. We have not build monadic lenses. That's because `Compose m n` usually isn't a monad even if both `m` and `n` are - which is the whole reason that monad transformers exist.
+I think it is worth pausing briefly to make some distinctions. So far, we have built lenses that contain a monad. We have not built monadic lenses. That's because `Compose m n` usually isn't a monad even if both `m` and `n` are - which is the whole reason that monad transformers exist.
 
-Here is an example of what monadic lenses could do, and this definitely can't:
+Here is an example of what monadic lenses could do, and mutable lenses very much can't:
 
 Imagine we have a container holding an `Int` field `count`, and a map of values. A monadic lens could read this `count` field, read the first `count` elements of a map, and return a list of them. This gives us a compound result - we can read from different lenses, perform control flow, and aggregate the result. This is extremely powerful but makes updating hard.
 
-The length of the list may have changed, some elements may have been inserted or deleted, and reorderings may have happend. Updating `count` is easy - we can use the length of the updated list - but the rest may required some sophisticated diffing process. We must be able to project an updated value from the updated compound state for each lens that we used. But often there can be many solutions without a clear best choice. [This blog about monadic profunctors](https://blog.poisson.chat/posts/2017-01-01-monadic-profunctors.html) is a great introduction to one nice approach in Haskell.
+The length of the list may have changed, some elements may have been inserted or deleted, and reorderings may have happened. Updating `count` is easy - we can use the length of the updated list - but the rest may require some sophisticated diffing process. We must be able to project an updated value from the updated compound state for each lens that we used. But often there can be many solutions without a clear best choice. [This blog about monadic profunctors](https://blog.poisson.chat/posts/2017-01-01-monadic-profunctors.html) is a great introduction to one nice approach in Haskell.
 
 Our `Compose m f` lenses can't do any of this. We can do monadic computations, but only in the `m` layer. This means we "only" can do everything traditional lenses can and don't have to deal with the problems monadic lenses bring.
 
@@ -122,16 +122,16 @@ Our `Compose m f` lenses can't do any of this. We can do monadic computations, b
 
 I recently had an epiphany about lvalues. Beware, this might be like epiphanies about monad-like burritos. Anyway, lvalues are like lazy values. GHC starts by assuming that all values are lazy, that they must be allocated as a function on the heap which is called only when required, and then is updated to return the result immediately once this first invocation is done. This is very slow. Therefore, GHC moves heaven and earth to undo this assumption. It uses strictness analysis, transformations, and a bit of cheating to uncover whenever this laziness is superfluous. Being strict means things can be stored in registers, which is the main ingredient for fast. In some sense using a value lazily changes it into something new because suddenly most optimizations fail and GHC must treat it completely differently.
 
-Lvalues are like that. C compilers assume lvalues must be allocated in memory, and they move heaven and earth to figure out when this can be undone. In a very real way taking the address to a value changes it into something else - if the address may escape then the value actually must be allocated. This disables a lot of optimizations. Rvalues are things which definitely don't have a leaked address - like the `3` in `f(3)` - so the compiler doesn't have to worry about maintaining their identity.
+Lvalues are like that. C compilers assume lvalues must be allocated in memory, and they move heaven and earth to figure out when this can be undone. In a very real way taking the address to a value changes it into something else - if the address may escape then the value must be allocated. This disables a lot of optimizations. Rvalues are things which cannot have a leaked address - like the `3` in `f(3)` - so the compiler doesn't have to worry about maintaining their identity.
 
-But in Haskell values don't have an identity. We don't even have a sensible pointer comparison most of the time. Therefore, GHC doesn't bother optimizing what few lvalues exist - what happens in IORef stays in IORef. This means we should keep small and short-lived things in rvalues if we are interested in performance. If we have a vector with cheap append then it will be occasionally resized, possibly returning a new buffer. I found two packages on Hackage which implement this, both by storing the vector in a mutable reference. This kills GHC's optimizations. If we want fast code we must use rvalues for small things, so append should return a new vector instead of `IO ()`.  
+But in Haskell values don't have an identity. We don't even have a sensible pointer comparison most of the time. Therefore, GHC doesn't bother optimizing what few lvalues exist - what happens in IORef stays in IORef. This means we should keep small and short-lived things in rvalues if we are interested in performance. If we have a vector with cheap append then it will be occasionally resized, possibly returning a new buffer. I found two packages on Hackage which implement this, both by storing the vector in a mutable reference. This kills GHC's optimizations. If we want fast code, we must use rvalues for small things. So append should return a new vector instead of `IO ()`.  
 This causes problems with invalidation and live-times. I will ignore all of them. Hopefully we will be able to encode those invariants with linear haskell at some point but worrying about these bugs is a job for future me. And screw 'em - they probably wrote those bugs in the first place.
 
 Anyway, there is something odd about returning a new vector after updates. Let's look at this example:
 
     foo[0][1].append(3)
 
-If we always return a vector after updates we would have to do something like
+If we always return a vector after updates, we would have to do something like
 
     t1 = foo[0]
     t2 = t1[1]
@@ -139,7 +139,7 @@ If we always return a vector after updates we would have to do something like
     t1' = t1([1] := t2')
     foo' = foo([0] := t1')
 
-The second halve is clearly ludicrous. Even if t2 is reallocated, t1 won't be. In some sense accessor-chains in imperative languages are split into two parts - the getter for an lvalue, and usage of that lvalue. But Haskell doesn't have first-class lvalues. This problem also occurs with linear Haskell because we cannot distinguish between ownership, location, and values. Instead we can use the second-to-last step as a proxy:
+The second halve is clearly ludicrous. Even if t2 is reallocated, t1 won't be. In some sense accessor-chains in imperative languages are split into two parts - the getter for an lvalue, and usage of that lvalue. But Haskell doesn't have first-class lvalues. This problem also occurs with linear Haskell because we cannot distinguish between ownership, location, and values. Instead, we can use the second-to-last step as a proxy:
 
     t1 <- V.read foo 0
     t2 <- V.read t1 1
@@ -157,7 +157,7 @@ Here the `ix 1` only occurs once. Intuitively we want to split our lens operatio
 
 But, like, without actually having to do all of that. We also might have the occasional lens which *does* need to mutate an inner value - when a HashMap must resize after an insertion, for instance. Ideally lenses would have control over whether their surrounding context should update, but that's exactly the opposite order lenses operate in.
 
-This is related to mutable and non-mutable borrows in rust. Mutable borrows are exactly the ones which can update their surrounding context. Non-mutable borrows are the ones which never update their surrounding context. Weirdly, in this comparison all pure lenses use mutable borrows so make of that what you will. If we look at pure values as top-level locals that completely replace the old version it doesn't not work?
+This is related to mutable and non-mutable borrows in rust. Mutable borrows are exactly the ones which can update their surrounding context. Non-mutable borrows are the ones which never update their surrounding context. Weirdly, in this comparison all pure lenses use mutable borrows so make of that what you will. If we look at pure values as top-level locals that completely replace the old version, it doesn't not work?
 
 ## Excuse me, could I Borrow a Lens
 
@@ -234,10 +234,10 @@ This forbids things like the `std::map::operator[]` from C++ which inserts a def
 
 I haven't noticed huge issues, but there are some annoyances.
 
-First, the duplicate lens commands. The implementation for `overM` is different from `over`. If the monad is Coercable the code duplication might be manageable? Either way it's not a huge issue but I'd rather not duplicate all lens operators.
+First, the duplicate lens commands. The implementation for `overM` is different from `over`. If the monad is Coercible the code duplication might be manageable? Either way it's not a huge issue but I'd rather not duplicate all lens operators.
 Secondly, we always perform the read step. For `setM` this isn't necessary. For mutable arrays GHC is hopefully smart enough to remove dead reads, though the index checking might not be removable. For complex things like hashmaps we can split out a resolving step which retrieves the correct slot and read/write on that slot. This runs into the lvalue problem, but it's usually representable as an array with offset.
 
-Not really a problem but it's really nice to mix mutable lenses with a state monad to hold the top-level values. This state monad could be interpreted as storage for local variables. Giving mutable lens operators that work a state monad adds even more code duplication, though.
+Not really a problem but it's nice to mix mutable lenses with a state monad to hold the top-level values. This state monad could be interpreted as storage for local variables. Giving mutable lens operators that work a state monad adds even more code duplication, though.
 
 ## References
 
@@ -246,4 +246,4 @@ There are many approaches to monadic lenses, like bidirectional transformations 
 There is a [mutable-lens package](https://hackage.haskell.org/package/mutable-lens) but indexing into a mutable vector isn't a lens .
 The [mutable package](https://hackage.haskell.org/package/mutable) has lens-like combinators but lacks interop with lenses.
 
-If there are other relevant approaches I'd love to hear about them.
+If there are other relevant approaches, I'd love to hear about them.
