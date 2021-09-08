@@ -12,24 +12,28 @@ But it does have a ring of truth to it. Especially for algorithms I quite enjoy 
 Here is a tiny function which fixes an invariant, namely some lists being normalized and sorted.  
 This implementation is nominally pure - a State monad carrying nested maps - to act as a baseline for something more efficient.
 
-    normalizeClassNodes :: M ()
+```haskell
+normalizeClassNodes :: M ()
     normalizeClassNodes =
-      forOfM (egg . #classes . each . #nodes) $ \nodes ->  do
-        nodes' <- traverse normalize nodes
-        pure $ uniqSorted $ sort nodes'
+    forOfM (egg . #classes . each . #nodes) $ \nodes ->  do
+    nodes' <- traverse normalize nodes
+    pure $ uniqSorted $ sort nodes'
+```
 
 (Some people will give me side-eye about the `M ()` type. The algorithm relies on deferring invariants so valid-by-construction types don't work, and indexed types are awkward in general. And extracting small named invariant-repairing functions is good for readability, actually. Thank you for coming to my ~~TED talk~~ tangent.)  
 
 Here is the corresponding Rust, for comparison:
 
-    for class in self.classes.values_mut() {
-                class
-                    .nodes
-                    .iter_mut()
-                    .for_each(|n| n.update_children(|id| uf.find_mut(id)));
-                class.nodes.sort_unstable();
-                class.nodes.dedup();
-                ...
+```rust
+for class in self.classes.values_mut() {
+            class
+                .nodes
+                .iter_mut()
+                .for_each(|n| n.update_children(|id| uf.find_mut(id)));
+            class.nodes.sort_unstable();
+            class.nodes.dedup();
+            ...
+```
 
 The Rust code is quite similar, point to the Imperative Haskell proponents. The Rust code, unfortunately, is also orders of magnitudes faster.
 
@@ -59,44 +63,56 @@ But grumbling over, that won't help us build nice imperative code. For this post
 
 Let us write some lenses that can mix monadic reads and writes with traditional lenses. We will assume that all mutable state is used in a linear manner, so we don't have to deal with overlapping state, cyclic references, or multi-threading. The most common lenses encode the operation in a polymorphic type:
 
-    type Lens' s a = forall f. Functor f => (a -> f a) -> s -> f s
+```haskell
+type Lens' s a = forall f. Functor f => (a -> f a) -> s -> f s
+```
 
 This is basically a continuation - tell me what to do with the field and I will tell you what happens with the container. In the following examples I will inline some newtypes.
 
 Frequently we instantiate the lens to update an `a` within an `s`:
     
-    (a -> a) -> s -> s
+```haskell
+(a -> a) -> s -> s
+```
 
 or to read an `a` within an `s`:
 
 
-    (a -> b) -> s -> b
-    s -> a -- equivalent
+```haskell
+(a -> b) -> s -> b
+s -> a -- equivalent
+```
 
 To allow monadic operations that interop with classic lenses, we will need some way to compose the monadic effects with the `f` parameter. Sorry, `Compose` the monadic effects with the `f` parameter.
 
-    newtype Compose m n a = Compose (m (n a))
+```haskell
+newtype Compose m n a = Compose (m (n a))
 
-    type MLens m s a = forall f. Traversable f => (a -> Compose m f a) -> s -> Compose m f s
+type MLens m s a = forall f. Traversable f => (a -> Compose m f a) -> s -> Compose m f s
+```
 
 And here is how we might define a monadic lens:
 
-    ixM :: (V.MVector v a, PrimMonad m) => Int -> MLens m (v (PrimState m) a) a
-    ixM i f v = Compose $ do
-      -- run in the monad m part
-      a <- V.read v i :: m a
-      ta <- getCompose (f a) :: m (t a)
-      -- the traverse t is what controls updates
-      -- during getting it contains no `a`, so traverse is a noop
-      tu <- traverse (V.write v i) ta :: m (t ())
-      -- fix the return type by injecting our original vector
-      -- (fmap is ignored during getting)
-      pure (v <$ tu) :: m (t (v (PrimState m) a))
+```haskell
+ixM :: (V.MVector v a, PrimMonad m) => Int -> MLens m (v (PrimState m) a) a
+ixM i f v = Compose $ do
+  -- run in the monad m part
+  a <- V.read v i :: m a
+  ta <- getCompose (f a) :: m (t a)
+  -- the traverse t is what controls updates
+  -- during getting it contains no `a`, so traverse is a noop
+  tu <- traverse (V.write v i) ta :: m (t ())
+  -- fix the return type by injecting our original vector
+  -- (fmap is ignored during getting)
+  pure (v <$ tu) :: m (t (v (PrimState m) a))
+```
 
 This lets us instantiate as
 
-    (a -> m a) -> s -> m s -- monadic update
-    (a -> m b) -> s -> m b -- monadic read (and other non-updating effects)
+```haskell
+(a -> m a) -> s -> m s -- monadic update
+(a -> m b) -> s -> m b -- monadic read (and other non-updating effects)
+```
 
 
 This was rushed, so don't worry if not every detail is clear. 
@@ -129,31 +145,41 @@ This causes problems with invalidation and live-times. I will ignore all of them
 
 Anyway, there is something odd about returning a new vector after updates. Let's look at this example:
 
-    foo[0][1].append(3)
+```rust
+foo[0][1].append(3)
+```
 
 If we always return a vector after updates, we would have to do something like
 
-    t1 = foo[0]
-    t2 = t1[1]
-    t2' = t2.append(3)
-    t1' = t1([1] := t2')
-    foo' = foo([0] := t1')
+```javascript
+t1 = foo[0]
+t2 = t1[1]
+t2' = t2.append(3)
+t1' = t1([1] := t2')
+foo' = foo([0] := t1')
+```
 
 The second halve is clearly ludicrous. Even if t2 is reallocated, t1 won't be. In some sense accessor-chains in imperative languages are split into two parts - the getter for an lvalue, and usage of that lvalue. But Haskell doesn't have first-class lvalues. This problem also occurs with linear Haskell because we cannot distinguish between ownership, location, and values. Instead, we can use the second-to-last step as a proxy:
 
+```haskell
     t1 <- V.read foo 0
     t2 <- V.read t1 1
     t2' <- V.append t2 3
     V.write t1 1 t2'
+```
 
 Note how the index `1` is duplicated, but that we do not have to modify `foo`. Note also that this code is immensely ugly and much harder to both read and write. As a point of comparison, a pure state monad representation *looks* much more imperative.
 
-    #foo . ix 0 . ix 1 <>= [3]
+```haskell
+#foo . ix 0 . ix 1 <>= [3]
+```
 
 Here the `ix 1` only occurs once. Intuitively we want to split our lens operation into three pieces. The first part is treated as a monadic getter, never updating. The second is treated as a monadic lens, both reading and updating. The final part operates on the inner value, appending `3`.
 
 
-    appendOfM (#foo . ix0) (ix 1) 3
+```haskell
+appendOfM (#foo . ix0) (ix 1) 3
+```
 
 But, like, without actually having to do all of that. We also might have the occasional lens which *does* need to mutate an inner value - when a HashMap must resize after an insertion, for instance. Ideally lenses would have control over whether their surrounding context should update, but that's exactly the opposite order lenses operate in.
 
@@ -164,24 +190,28 @@ This is related to mutable and non-mutable borrows in rust. Mutable borrows are 
 The main difference from the previous monadic lenses is that we always return an `m (f ())`, with some newtype nonsense on top.
 
 
-    type LValLens m s a = forall f. Traversable f => (a -> Compose m f a) -> s -> Compose m (Const (f ())) s
+```haskell
+type LValLens m s a = forall f. Traversable f => (a -> Compose m f a) -> s -> Compose m (Const (f ())) s
+```
 
 The key thing is the extra `Const` in the return type `Compose m (Const (f ())) s`, which suppresses the update code of the outer lens. During updates we use `f ~ Identity`. After inlining `Compose m (Const (Identity ())) s` is equivalent to `m ()`, skipping the update on the outer part. During reading we get `f ~ Const a`, so we get `Compose m (Const (Const a ())) s`. After inlining this is `m a`, flattening the nested `Const`.
 
 This doesn't quite work when composing with other lenses - with function composition the inner lens cannot control if the outer updates  - so we need a different composition operator:
 
 
-    (.$) :: (Functor f, Applicative m)
-           =>
-              ((a -> Compose m (Const (f ())) b)
-             ->(s -> Compose m (Const (f ())) t))
-           ->
-              ((x -> Compose m f x)
-             ->(a -> Compose m f ()))
-           -> 
-              ((x -> Compose m f x)
-             ->(s -> Compose m f ()))
-    (.$) l r f s = Compose $ fmap getConst $ getCompose $ l (\a -> Compose $ Const <$> getCompose (r f a)) s
+```haskell
+(.$) :: (Functor f, Applicative m)
+       =>
+          ((a -> Compose m (Const (f ())) b)
+         ->(s -> Compose m (Const (f ())) t))
+       ->
+          ((x -> Compose m f x)
+         ->(a -> Compose m f ()))
+       -> 
+          ((x -> Compose m f x)
+         ->(s -> Compose m f ()))
+(.$) l r f s = Compose $ fmap getConst $ getCompose $ l (\a -> Compose $ Const <$> getCompose (r f a)) s
+```
 
 
 It's beautiful. Well, it drives tears to my eyes at any rate. But at its core it's almost normal lens composition, adding a Const layer before we return to the outer lens.
@@ -189,11 +219,13 @@ It's beautiful. Well, it drives tears to my eyes at any rate. But at its core it
 As a preview for next time, here is a usage example on a 5x3x3 vector which is a newtype on an unboxed vector:
 
 
-    someLookup :: PrimMonad m => DimV VU.MVector (PrimState m) '[5,3,3] (Int, Bool) -> m Int
-    someLookup = viewM (ixM 1 .$ ixM 2 .$ ixM 0 . _2)
+```haskell
+someLookup :: PrimMonad m => DimV VU.MVector (PrimState m) '[5,3,3] (Int, Bool) -> m Int
+someLookup = viewM (ixM 1 .$ ixM 2 .$ ixM 0 . _2)
 
-    anUpdate :: PrimMonad m => DimV VU.MVector (PrimState m) '[5,3,3] (Int, Bool) -> m ()
-    anUpdate = overM (ixM 1 .$ ixM 2 .$ ixM 0 . _2) (+1)
+anUpdate :: PrimMonad m => DimV VU.MVector (PrimState m) '[5,3,3] (Int, Bool) -> m ()
+anUpdate = overM (ixM 1 .$ ixM 2 .$ ixM 0 . _2) (+1)
+```
 
 ## Law of the land
 
@@ -201,31 +233,39 @@ Here are some laws I'd deem reasonable
 
 #### Get Put
 
-    v <- viewM l s
-    setM l v s
-    ~
-    pure ()
+```haskell
+v <- viewM l s
+setM l v s
+~
+pure ()
+```
 
 #### Put Put
 
-    setM l v s
-    setM l v s
-    ~
-    setM l v s
+```haskell
+setM l v s
+setM l v s
+~
+setM l v s
+```
 
 #### Put Get
 
-    setM l v s
-    v' <- viewM l s
-    assert (l == l')
+```haskell
+setM l v s
+v' <- viewM l s
+assert (l == l')
+```
 
 ##### Dead Reads
 
 Reads which aren't used should be removable:
 
-    () <$ viewM l s
-    ~
-    pure ()
+```haskell
+() <$ viewM l s
+~
+pure ()
+```
 
 This forbids things like the `std::map::operator[]` from C++ which inserts a default value into the map when the key is missing. Good. Use an update and return the new value when this is what's needed.
 
