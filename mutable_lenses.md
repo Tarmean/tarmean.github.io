@@ -116,7 +116,7 @@ This lets us instantiate as
 
 
 This was rushed, so don't worry if not every detail is clear. 
-Important is that this gives us a uniform interface, lets us interact with normal lenses, and assuming linear mutable state has sane behaviour.
+Important is that this gives us a uniform interface, lets us interact with normal lenses, and (assuming linear mutable state) has sane behaviour.
 
 But we return the original vector, and this pseudo update will cascade all the way to the top. This is because Haskell doesn't really understand the concept of a memory location - we only get values. Lenses act on values. If we use lenses, then we cannot distinguish between updating a memory location or a value.
 
