@@ -14,7 +14,7 @@ This implementation is nominally pure - a State monad carrying nested maps - to 
 
 ```haskell
 normalizeClassNodes :: M ()
-    normalizeClassNodes =
+normalizeClassNodes =
     forOfM (egg . #classes . each . #nodes) $ \nodes ->  do
         nodes' <- traverse normalize nodes
         pure $ uniqSorted $ sort nodes'
