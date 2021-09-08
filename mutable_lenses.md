@@ -10,7 +10,7 @@ Haskell is sometimes referred to as the 'Best Imperative Programming Language'. 
 But it does have a ring of truth to it. Especially for algorithms I quite enjoy writing lens-y, state-y, backtracking-y, pseudo-imperative code. This post started by me writing a naive e-graph implementation based on [egg](https://github.com/egraphs-good/egg/) in Haskell to figure out how it works.
 
 Here is a tiny function which fixes an invariant, namely some lists being normalized and sorted.  
-This implementation is nominally pure - a State monad carrying nested maps - to act as a baseline for something more efficient.
+This implementation is nominally pure - a State monad carrying nested maps - to act as a baseline for something more efficient[1].
 
 ```haskell
 normalizeClassNodes :: M ()
@@ -20,10 +20,6 @@ normalizeClassNodes =
         pure $ uniqSorted $ sort nodes'
 ```
 
-<details>
-  <summary>Irrelevant Tangent</summary>
- Some people will give me side-eye about the `M ()` type. The algorithm relies on deferring invariants so valid-by-construction types don't work, and indexed types are awkward in general. And extracting small named invariant-repairing functions is good for readability, actually. Thank you for coming to my ~~TED talk~~ tangent.
-</details>
 
 Here is the corresponding Rust, for comparison:
 
@@ -293,3 +289,7 @@ There is a [mutable-lens package](https://hackage.haskell.org/package/mutable-le
 The [mutable package](https://hackage.haskell.org/package/mutable) has lens-like combinators but lacks interop with lenses.
 
 If there are other relevant approaches, or thoughts on this approach, I'd love to hear about them. Thanks for reading!
+
+
+
+[1]:Some people will give me side-eye about the `M ()` type. The algorithm relies on deferring invariants so valid-by-construction types don't work, and indexed types are awkward in general. And extracting small named invariant-repairing functions is good for readability, actually. Thank you for coming to my ~~TED talk~~ tangent.
