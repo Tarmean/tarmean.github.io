@@ -10,7 +10,7 @@ Haskell is sometimes referred to as the 'Best Imperative Programming Language'. 
 But it does have a ring of truth to it. Especially for algorithms I quite enjoy writing lens-y, state-y, backtracking-y, pseudo-imperative code. This post started with me writing a naive e-graph implementation based on [egg](https://github.com/egraphs-good/egg/) in Haskell to figure out how it works.
 
 Here is a tiny function which fixes an invariant, namely some lists being normalized and sorted.  
-This implementation is nominally pure - a State monad carrying nested maps - to act as a baseline for something more efficient[^1].
+This implementation is nominally pure - a State monad carrying nested maps - to act as a baseline for something more efficient<sup id="a1">[1](#f1)</sup>.
 
 ```haskell
 normalizeClassNodes :: M ()
@@ -277,7 +277,7 @@ This forbids things like the `std::map::operator[]` from C++ which inserts a def
 I haven't noticed huge issues, but there are some annoyances.
 
 First, the duplicate lens commands. The implementation for `overM` is different from `over`. If the monad is Coercible the code duplication might be manageable? Either way it's not a huge issue but I'd rather not duplicate all lens operators.
-Secondly, we always perform the read step. For `setM` this isn't necessary. For mutable arrays GHC is hopefully smart enough to remove dead reads[^2], though the index checking might not be removable. For complex things like hashmaps we can split out a resolving step which retrieves the correct slot and read/write on that slot. This runs into the lvalue problem, but it's usually representable as an array with offset.
+Secondly, we always perform the read step. For `setM` this isn't necessary. For mutable arrays GHC is hopefully smart enough to remove dead reads<sup id="a2">[2](#f2)</sup>, though the index checking might not be removable. For complex things like hashmaps we can split out a resolving step which retrieves the correct slot and read/write on that slot. This runs into the lvalue problem, but it's usually representable as an array with offset.
 
 Not really a problem but it's nice to mix mutable lenses with a state monad to hold the top-level values. This state monad could be interpreted as storage for local variables. For things like resizable vectors this prevents us from accidentally reusing an old, now reallocated, version - though linear types would be safer. Adding mutable lens operators that work with state monads adds even more code duplication, though.
 
@@ -292,6 +292,8 @@ If there are other relevant approaches, or thoughts on this approach, I'd love t
 
 
 ## Footnotes
-[^1]: Some people will give me side-eye about the `M ()` type. The algorithm relies on deferring invariants so valid-by-construction types don't work. And extracting small named invariant-repairing functions is good for readability, actually. Thank you for coming to my ~~TED talk~~ tangent.
 
-[^2]: Update: Apparently the native codegen isn't smart enough. This should also affect e.g. unboxed vectors if you only use some fields
+
+<b id="f1">1</b> : Some people will give me side-eye about the `M ()` type. The algorithm relies on deferring invariants so valid-by-construction types don't work. And extracting small named invariant-repairing functions is good for readability, actually. Thank you for coming to my ~~TED talk~~ tangent. [↩](#a1)
+
+<b id="f2">2</b>Update: Apparently the native codegen isn't smart enough. This should also affect e.g. unboxed vectors if you only use some fields  [↩](#a2)
