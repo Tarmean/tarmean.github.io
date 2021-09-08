@@ -154,9 +154,9 @@ If we always return a vector after updates, we would have to do something like
 ```javascript
 t1 = foo[0]
 t2 = t1[1]
-t2' = t2.append(3)
-t1' = t1([1] := t2')
-foo' = foo([0] := t1')
+t2_a = t2.append(3)
+t1_a = t1([1] := t2_b)
+foo_a = foo([0] := t1_b)
 ```
 
 The second halve is clearly ludicrous. Even if t2 is reallocated, t1 won't be. In some sense accessor-chains in imperative languages are split into two parts - the getter for an lvalue, and usage of that lvalue. But Haskell doesn't have first-class lvalues. This problem also occurs with linear Haskell because we cannot distinguish between ownership, location, and values. Instead, we can use the second-to-last step as a proxy:
