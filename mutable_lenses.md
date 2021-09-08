@@ -18,7 +18,7 @@ This implementation is nominally pure - a State monad carrying nested maps - to 
         nodes' <- traverse normalize nodes
         pure $ uniqSorted $ sort nodes'
 
-(Some people will give me side-eye about the `M ()` type. The algorithm relies on deferring invariants so valid-by-construction types don't work, and indexed types are awkward in general. Also (and this probably isn't a popular opinion) extracting small named invariant-repairing functions is good for readability, actually. Thank you for coming to my ~~TED talk~~ tangent.)  
+(Some people will give me side-eye about the `M ()` type. The algorithm relies on deferring invariants so valid-by-construction types don't work, and indexed types are awkward in general. And extracting small named invariant-repairing functions is good for readability, actually. Thank you for coming to my ~~TED talk~~ tangent.)  
 
 Here is the corresponding Rust, for comparison:
 
