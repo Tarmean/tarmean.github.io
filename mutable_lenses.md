@@ -277,7 +277,7 @@ I haven't noticed huge issues, but there are some annoyances.
 First, the duplicate lens commands. The implementation for `overM` is different from `over`. If the monad is Coercible the code duplication might be manageable? Either way it's not a huge issue but I'd rather not duplicate all lens operators.
 Secondly, we always perform the read step. For `setM` this isn't necessary. For mutable arrays GHC is hopefully smart enough to remove dead reads, though the index checking might not be removable. For complex things like hashmaps we can split out a resolving step which retrieves the correct slot and read/write on that slot. This runs into the lvalue problem, but it's usually representable as an array with offset.
 
-Not really a problem but it's nice to mix mutable lenses with a state monad to hold the top-level values. This state monad could be interpreted as storage for local variables. Giving mutable lens operators that work a state monad adds even more code duplication, though.
+Not really a problem but it's nice to mix mutable lenses with a state monad to hold the top-level values. This state monad could be interpreted as storage for local variables. Adding mutable lens operators that work with state monasd adds even more code duplication, though.
 
 ## References
 
