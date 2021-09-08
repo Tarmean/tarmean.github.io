@@ -96,15 +96,15 @@ And here is how we might define a monadic lens:
 ```haskell
 ixM :: (V.MVector v a, PrimMonad m) => Int -> MLens m (v (PrimState m) a) a
 ixM i f v = Compose $ do
-  -- run in the monad m part
-  a <- V.read v i :: m a
-  ta <- getCompose (f a) :: m (t a)
-  -- the traverse t is what controls updates
-  -- during getting it contains no `a`, so traverse is a noop
-  tu <- traverse (V.write v i) ta :: m (t ())
-  -- fix the return type by injecting our original vector
-  -- (fmap is ignored during getting)
-  pure (v <$ tu) :: m (t (v (PrimState m) a))
+    -- run in the monad m part
+    a <- V.read v i :: m a
+    ta <- getCompose (f a) :: m (t a)
+    -- the traverse t is what controls updates
+    -- during getting it contains no `a`, so traverse is a noop
+    tu <- traverse (V.write v i) ta :: m (t ())
+    -- fix the return type by injecting our original vector
+    -- (fmap is ignored during getting)
+    pure (v <$ tu) :: m (t (v (PrimState m) a))
 ```
 
 This lets us instantiate as
