@@ -194,9 +194,9 @@ The main difference from the previous mutating lenses is that we always return a
 type LValLens m s a = forall f. Traversable f => (a -> Compose m f a) -> s -> Compose m f ()
 ```
 
-That's just a normal mutable lens that returns unit! But we must do some more work to make this compose. If we write our lenses in CPS then `f . g` means that `g` cannot affect the behaviour of `f`. But that is exactly what we need - some way to suppress the update code from `f`. Instead, we use a different function composition that injects a newtype before passing back to f. 
+That's just a normal mutable lens that returns unit! But we must do some more work to make this compose. If we write our lenses in CPS then `f . g` means that `g` cannot affect the behaviour of `f`. But that is exactly what we need - some way to suppress the update code from `f`. Instead, we use a different function composition `.$` that injects a newtype before passing back to f. 
  
- The key thing is the extra `Const` in the return type `Compose m (Const (f ())) s`, which suppresses the update code of the outer lens. During updates we use `f ~ Identity`. After inlining `Compose m (Const (Identity ())) s` is equivalent to `m ()`, skipping the update on the outer part. During reading we get `f ~ Const a`, so we get `Compose m (Const (Const a ())) s`. After inlining this is `m a`, flattening the nested `Const`.
+ The outer lens sees the return type `Compose m (Const (f ())) s`, where the `Const` means the outer lens will never see an updated value. During updates we use `f ~ Identity`. After inlining `Compose m (Const (Identity ())) s` is equivalent to `m ()`, skipping the update on the outer part. During reading we get `f ~ Const a`, so we get `Compose m (Const (Const a ())) s`. After inlining this is `m a`, flattening the nested `Const`.
 
 The composition operator is easy to write. If you let GHC complete the type signature:
 
