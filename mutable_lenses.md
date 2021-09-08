@@ -246,4 +246,4 @@ There are many approaches to monadic lenses, like bidirectional transformations 
 There is a [mutable-lens package](https://hackage.haskell.org/package/mutable-lens) but here indexing into a mutable vector isn't a lens.
 The [mutable package](https://hackage.haskell.org/package/mutable) has lens-like combinators but lacks interop with lenses.
 
-If there are other relevant approaches, I'd love to hear about them.
+If there are other relevant approaches, or thoughts on this approach, I'd love to hear about them. Thanks for reading!
