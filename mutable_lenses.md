@@ -294,6 +294,6 @@ If there are other relevant approaches, or thoughts on this approach, I'd love t
 ## Footnotes
 
 
-<b id="f1">1</b> : Some people will give me side-eye about the `M ()` type. The algorithm relies on deferring invariants so valid-by-construction types don't work. And extracting small named invariant-repairing functions is good for readability, actually. Thank you for coming to my ~~TED talk~~ tangent. [↩](#a1)
+<b id="f1">1</b> : Some people will give me side-eye about the `M ()` type. The algorithm relies on deferring invariants so valid-by-construction types don't work. And I might be alone with this opinion but extracting small named invariant-repairing functions is good for readability, actually. Thank you for coming to my ~~TED talk~~ tangent. [↩](#a1)
 
 <b id="f2">2</b>Update: Apparently the native codegen isn't smart enough. This should also affect e.g. unboxed vectors if you only use some fields  [↩](#a2)
