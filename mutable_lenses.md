@@ -187,7 +187,7 @@ This is related to mutable and non-mutable borrows in rust. Mutable borrows are 
 
 ## Excuse me, could I Borrow a Lens
 
-The main difference from the previous monadic lenses is that we always return an `m (f ())`, with some newtype nonsense on top.
+The main difference from the previous mutating lenses is that we always return an `m (f ())`, with some newtype nonsense on top.
 
 
 ```haskell
