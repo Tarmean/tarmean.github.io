@@ -22,10 +22,10 @@ normalizeClassNodes =
 
 <details>
   <summary>Irrelevant Tangent</summary>
-  
- Some people will give me side-eye about the `M ()` type. The algorithm relies on deferring invariants so valid-by-construction types don't work, and indexed types are awkward in general. And extracting small named invariant-repairing functions is good for readability, actually. Thank you for coming to my ~~TED talk~~ tangent.)  
+ Some people will give me side-eye about the `M ()` type. The algorithm relies on deferring invariants so valid-by-construction types don't work, and indexed types are awkward in general. And extracting small named invariant-repairing functions is good for readability, actually. Thank you for coming to my ~~TED talk~~ tangent.
 </details>
 
+Here is the corresponding Rust, for comparison:
 
 ```rust
 for class in self.classes.values_mut() {
