@@ -291,5 +291,6 @@ The [mutable package](https://hackage.haskell.org/package/mutable) has lens-like
 If there are other relevant approaches, or thoughts on this approach, I'd love to hear about them. Thanks for reading!
 
 
+## Footnote~~s~~
 
 <a name="footnote1">1</a>: Some people will give me side-eye about the `M ()` type. The algorithm relies on deferring invariants so valid-by-construction types don't work, and indexed types are awkward in general. And extracting small named invariant-repairing functions is good for readability, actually. Thank you for coming to my ~~TED talk~~ tangent.
