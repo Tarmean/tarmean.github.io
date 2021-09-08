@@ -10,7 +10,7 @@ Haskell is sometimes referred to as the 'Best Imperative Programming Language'. 
 But it does have a ring of truth to it. Especially for algorithms I quite enjoy writing lens-y, state-y, backtracking-y, pseudo-imperative code. This post started by me writing a naive e-graph implementation based on [egg](https://github.com/egraphs-good/egg/) in Haskell to figure out how it works.
 
 Here is a tiny function which fixes an invariant, namely some lists being normalized and sorted.  
-This implementation is nominally pure - a State monad carrying nested maps - to act as a baseline for something more efficient[1].
+This implementation is nominally pure - a State monad carrying nested maps - to act as a baseline for something more efficient<sup>[1](#footnote1)</sup>.
 
 ```haskell
 normalizeClassNodes :: M ()
@@ -292,4 +292,4 @@ If there are other relevant approaches, or thoughts on this approach, I'd love t
 
 
 
-[1]:Some people will give me side-eye about the `M ()` type. The algorithm relies on deferring invariants so valid-by-construction types don't work, and indexed types are awkward in general. And extracting small named invariant-repairing functions is good for readability, actually. Thank you for coming to my ~~TED talk~~ tangent.
+<a name="footnote1">1</a>: Some people will give me side-eye about the `M ()` type. The algorithm relies on deferring invariants so valid-by-construction types don't work, and indexed types are awkward in general. And extracting small named invariant-repairing functions is good for readability, actually. Thank you for coming to my ~~TED talk~~ tangent.
