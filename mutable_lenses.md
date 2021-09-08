@@ -214,7 +214,7 @@ This doesn't quite work when composing with other lenses - with function composi
 ```
 
 
-It's beautiful. Well, it drives tears to my eyes at any rate. But at its core it's almost normal lens composition, adding a Const layer before we return to the outer lens.
+It's beautiful. Well, it brings tears to my eyes at any rate. But at its core it's almost normal lens composition, adding a Const layer before we return to the outer lens.
 
 As a preview for next time, here is a usage example on a 5x3x3 vector which is a newtype on an unboxed vector:
 
