@@ -151,7 +151,7 @@ Now if we run `test True False` after `-XApplicativeDo` rewrites the definition 
     when False (tellCost 1) -- (-6)
     tellCost 3 -- (-9)
 
-If at any step our incoming slack isn't sufficient we abort without having to run the rest.    
+If at any step our incoming slack isn't sufficient we abort without having to run the rest. Because the code is trivial `withMinCost` doesn't carry more information than the bodies, but for branching code or recursive functions we actually need to supply a heuristic.   
 We can then write a rather ugly loop which keeps track of the best solution found so far:
 
     pickBest :: (Monad m, Cost c o s, Monoid o) => BnB c o s m a -> c -> s -> m (Maybe (a,o))
