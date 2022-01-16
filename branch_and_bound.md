@@ -143,7 +143,7 @@ A small example might be useful here:
 Now if we run `test True False` after `-XApplicativeDo` rewrites the definition into `*>`, we execute:
 
 
-    reduceSlack 8 -- `>>=` pre-pays 
+    reduceSlack 8 -- `>>=` (or the run function) pre-pays 
     increaseSlack 5 -- `withMinCost` refunds
     when True (tellCost 1)
     tellCost 5
