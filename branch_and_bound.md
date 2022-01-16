@@ -183,7 +183,7 @@ A simple solution is to cache by key and context, and allowing a single call to 
 
  Expensive subproblems (guessing `pizza` first) also take longer to compute, so if they often get pruned we never store a result and don't actually use the cache. We can exploit the polymorphism by inserting `Either MinCost RealCost` in the cache, storing some lower bound as `Left` if we prune early. This makes it more likely that we can use the cache when computing the `min_cost` heuristic, letting us prune earlier in bad search areas.
 
-## Summary
+## Rambly Ending
 
 And that's everything I wanted to cover. We could add a fancier search monad that `Stream` to mix in best first search/cyclic best first search, or add fancier pruning strategies.
 
