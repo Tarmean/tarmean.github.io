@@ -2,21 +2,23 @@
 
 ## Introduction
 
-Worlde is a Mastermind-like online game where you guess five-letter words. The game answers which letters are correct, in the wrong position, or flat out wrong. You have 6 guesses to win. This is a great balance because most people win most of the time, but I still feel immensely pleased for suceeding.  
-But it creates an interesting meta-puzzle: what is the optimal Wordle strategy? Branch&Bound seems like the perfect approach here. Branch&Bound is an algorithm class I hadn't heard of for the longest time, probably because it is *really* vague. Lets explore what the essence of Branch&Bound is by abstracting over it, in Haskell. Maybe I should mention my final solution ended up being in Rust because it turned out immensely easier to write memory-efficient code in Rust. The Haskell version took 25GB of memory, Rust using bitsets used 50MB. So in my defense, any code-crimes perpetrated here are mostly theoretic.
+[Wordle](https://www.powerlanguage.co.uk/wordle/) is a Mastermind-like browser game where you guess five-letter words. The game answers which letters are correct, in the wrong position, or flat out wrong. You have 6 guesses to win. This is a great balance because most people win most of the time, but I still feel immensely pleased whenever I do.  
+Here is an interesting meta-puzzle: What is the optimal Wordle strategy? We can figure this out with Branch and Bound (BnB). BnB describes a class of algorithms I hadn't heard of for the longest time, probably because the literature tends to be *really* vague. Lets try to find the essence of BnB by abstracting over it, in Haskell.
 
-Most descriptions of Branch&Bound concur on the following steps:
+Maybe I should mention my final solution ended up being in Rust because it turned out immensely easier to write memory-efficient code there. The first Haskell version took 20GB+ of memory, Rust using bitsets used 50MB. So in my defense, any code-crimes perpetrated here are mostly theoretic.
+
+All descriptions of BnB I could find concur on the following steps:
 
 - We have some representation for subproblems
 - We can split unsolved subproblems into smaller subproblems
-- We can prune some subproblems that won't lead to an optimal solution
+- We can prune some subproblems which won't lead to an optimal solution
 
-Admittedly that's more concrete than 'we use computers and algorithm to find a solution', but not by much. I will focus on what I consider the core which can be found in almost all Branch&Bound implementations:
+Admittedly that's more concrete than "we use computers and algorithms to find a solution", but not by much. So I will focus on one specific type of pruning which can be found in most BnB implementations:
 
 - We try to give subproblems a minimum and maximum cost
 - If we have two subproblems `a` and `b`, when `max_cost(a) < min_cost(b)` then we can prune `b` because we know it won't lead to an optimal solution
 
-Much more concrete, and quite close to alpha-beta-pruning for game trees. For solved subproblems the `max_cost` and actual cost coincide so we don't have to bother writing a `max_cost` heuristic - we can use the smallest finished solution found so far. Many variants use a search strategy other than depth first, use smarter goal expansion, and add further pruning like plane cutting or dominance pruning. Surprisingly many algorithms, including A* or even mixed integer programming, fit in this framework. 
+Much more concrete, and quite close to alpha-beta-pruning for game trees. For solved subproblems the `max_cost` and actual cost coincide so we don't have to bother writing a `max_cost` heuristic - we can use the smallest finished solution found so far. All intuitions about `A*` heuristics work for `min_cost` because it's the same idea, turns out `A*` can be seen as a BnB algorithm. Beyond these basics we could use search strategies other than depth first, use smarter goal expansion, and add further filtering like plane cutting or dominance pruning. For today lets stick to the basics, though.
 
 ## In Haskell
 
@@ -37,33 +39,33 @@ To abstract over all this in Haskell we will use a monad transformer. We can exp
                Nothing -> empty
                Just slack' -> Bound (put slack')
 
-To keep things interesting I will add another constraint:
-If we can split our subgoal into $n$ independent steps $child_1 \ldots child_n$, then we can give a better (i.e. lower) slack value:
+To keep things interesting I will add another constraint, supporting the following optimization:  
+If we can split our subgoal into `n` independent steps `child_1...child_n`, then we can give a better (i.e. lower) slack value:
 
     min_costs = children.map(min_cost)
     child_slack[i] = slack - (sum(min_costs) - min_costs[i])
 
 In words, to compute the slack for subgoal `i` we can safely substract the `min_cost` of all other independent subgoals from the current slack in advance. This often gives us a much better estimate! Thankfully Haskell has a typeclass for independent steps (`Applicative`) and a language extension to rewrite Monadic code to Applicative steps (`-XApplicativeDo`). The extension is mostly used for implicit parallelism, but collecting as much `min_cost` information as possible works perfectly fine.  
-However, wiring this cost information and monadic flow up sounds complicated. Instead we will build a stack of monad transformers that have narrow purposes.
+However, wiring this cost information and monadic flow up sounds complicated. Instead we will build a stack of monad transformers that each have narrow purposes. For real code we probably would want to inline everything as a final step because deeply nested monad transformers do not optimize well.
 
 ### Memoization (planning stages)
 
-As a final complication I want to support memoization. This makes the slack computation harder because cost might be context-sensitive. Lets use Wordle as an example. For the following tree our total cost is $1+2+3+2+3+3=14$.
+As a final complication I want to support memoization. This makes the slack computation harder because cost might be context-sensitive. Lets use Wordle as an example. For the following tree our total cost is `1+2+3+2+3+3=14`.
 
 
 ![Wordle tree](wordle.svg)
 
-If we use this cached tree in another position, and this position is at depth `3`, then we must update the cost to $4+5+6+5+6+6=32$! We can work around this by splitting context, cost, and slack into three types:
+If we use this cached tree in another position, and this position is at depth `3`, then we must update the cost to `4+5+6+5+6+6=32`! We can work around this by splitting context, cost, and slack into three types:
 
     newtype WordleSlack = WSlack Int
     instance Slack WordleSlack where
         addSlack = coerce (+)
         dropSlack (WSlack l) (WSlack r)
-          | leftover >= 0 = Just (WSlack o)
+          | leftover >= 0 = Just (WSlack leftover)
           | otherwise = Nothing
           where leftover = l - r
 
-    class (Slack s, Ord o) => Cost c o s where
+    class (Slack s, Monoid o, Ord o) => Cost c o s where
         inContext :: c -> o -> s
 
     data WordleCost = WCost { totalCost :: Int, nodeCount :: Int }
@@ -76,7 +78,7 @@ If we use this cached tree in another position, and this position is at depth `3
         inContext (Depth depth) (WCost {totalCost, nodeCount}) = WSlack (totalCost + nodeCount * depth)
 
 
-Now we can build our next monad transformer. Annoyingly, slack must be global because we want to adjust it whenever we find a new and better solution. Context could live in a `ReaderT` monad, and `Cost` in a `WriterT`, but we will put them in a single `StateT` to simplify things later on. `Stream` is some version of `ListT`-done-right.
+Now we can build our next monad transformer. Annoyingly, slack must be global because we want to adjust it for future passes whenever we find a new and better solution. Context could live in a `ReaderT` monad, and `Cost` in a `WriterT`, but we will put them in a single `StateT` to simplify things later on. `Stream` is some version of `ListT`-done-right.
 
     newtype BoundM c o s m a = BoundM { unBoundM :: StateT (c,o) (Stream (StateT s m)) a }
 
@@ -112,11 +114,14 @@ We can then combine the monads by running them `Both`:
     newtype BnB c o s m a = BnB { unBnB :: Both (BoundM c o s m) (LowerBound o) a }
       deriving (Functor, Alternative)
 
-Before we run a Monadic bind, we pre-pay the minimum cost for the left hand side. When we reach a `withMinCost` annotation, which gives a heuristic cost for the containing block, we emit this minimum cost so it will be payed in advance. But before entering the block we refund this cost so it can be paid for real this time. During execution we might find that the cost is higher than expected, which either prunes the branch or at least reduces the slack for following steps.
+Before we run a Monadic bind, we pre-pay the minimum cost for the left hand side. 
 
     instance (Monad m, Cost c o s) => Monad (BnB c o s m) where
         return = pure
-        l >>= r = let (cost, l') = collectCost l in dropSlack cost *> BnB (unBnB l' >>= unBnB . r)
+        l >>= r = let (cost, l') = collectCost l in reduceSlack cost *> BnB (unBnB l' >>= unBnB . r)
+
+When we reach a `withMinCost` annotation, which gives a heuristic cost for the containing block, we emit this minimum cost so it will be payed in advance. But before entering the block we refund this cost so it can be paid for real this time. During execution we might find that the cost is higher than expected, which either prunes the branch or at least further reduces the slack for following steps.
+
 
     withMinCost :: Cost c o s => o -> BnB c o s m a -> BnB c o s m a
     withMinCost o m = liftRight (LowerBound o) *> (liftLeft (increaseSlack o) >> m)
@@ -125,9 +130,8 @@ Before we run a Monadic bind, we pre-pay the minimum cost for the left hand side
 We can then write a rather ugly loop which keeps track of the best solution found so far:
 
     pickBest :: (Monad m, Cost c o s, Monoid o) => BnB c o s m a -> c -> s -> m (Maybe (a,o))
-    pickBest (BnB (MB m0 (LowerBound bound0))) ctx0 slack0 = flip evalStateT initialSlack $ go s0 Nothing $ runStateT (unBoundM m0) (ctx0, mempty)
+    pickBest (BnB (MB m0 (LowerBound bound0))) ctx0 slack0 = flip evalStateT slack0 $ go s0 Nothing $ flip runStateT (ctx0, mempty) $ unBoundM $ reduceSlack bound0 *> m0 
       where
-        initialSlack = reduceSlack slack0 (inContext ctx0 bound)
         go slack acc m = do
            put slack
            step <- runStream m
@@ -140,18 +144,24 @@ We can then write a rather ugly loop which keeps track of the best solution foun
 By wrapping the cost in `Maybe` we sidestep problems if we don't have an initial maximum cost. If we want to add additional pruning, like not going past depth 6, we can adjust the cost/slack/context types.
 
 
-
 ## Memoization (for real this time)
 
 
-We can add caching with yet another state monad, we only need to produce a cache key for the arguments to the cached function. For Wordle we can do this as 5 `Word32` arguments that encode a bitset. If letter `a` can still occur in position `1`, then the first bit in the first `Word32` is set. 
+We can add caching with yet another state monad, we only need to produce a cache key for the arguments to the cached function. For Wordle we can do this as 5 `Word32` arguments that encode a bitset. If letter `a` can still occur in position `1`, then the first bit in the first `Word32` is set. This requires some care for guesses with repeated letters, and we cannot represent `there is exactly one letter z at an unkown location`, but it works well enough to find an optimal solution and is reasonably memory efficient.
 
-But the context sensitivity strikes again. If we first compute a solution at depth 4 and later encounter the same arguments at depth 3 then we might find a better solution that is mostly flat but has a single length-three guess chain. On the other hand, if we find an amazingly great solution that has only depth 2 then we should use the cached result. 
+But the context sensitivity strikes again. If we first compute a solution at depth 4 and later encounter the same arguments at depth 3 then we might find a previously pruned solution that is mostly flat but has a single length-three guess chain. On the other hand, if we find an amazingly great solution that has only depth 2 then we should use the cached result.
 
-
-I solved this by caching by key and context, and allowing a single call to find solutions for multiple contexts.
+A simple solution is to cache by key and context, and allowing a single call to emit solutions for multiple contexts.
 
     newtype Caching k c o a = Caching { unCaching :: State (M.Map k (M.Map c o)) a }
         deriving (Functor, Applicative, Monad)
 
-By exploiting the polymorphism we can insert `Either MinCost RealCost` in the cache, that way we retain some information even if we prune a call.
+We can exploit the polymorphism by inserting `Either MinCost RealCost` in the cache, that way we retain some information even if we prune a call. This frequently lets us use the cache when computing the `min_cost` heuristic, letting us prune earlier.
+
+## Summary
+
+And that's everything I wanted to cover. We could add a fancier search monad that `Stream` to mix in best first search/cyclic best first search, or add fancier pruning strategies.
+
+I do not think I actually would use this approach. `-XApplicativeDo` is immensely hard to reason about, and the wrong batching could cause orders of magnitude slowdown in a search. Using newtypes in the style of the `async` library on the other hand seems reasonable.
+
+The Caching strategy, and creating multiple entries in a map, seems fairly inefficient. It'd also become much more complex contexts with partial orderings, maybe storing a list of cache entries as an lru cache or compressing them with chain decomposition could work.
