@@ -172,16 +172,16 @@ There is a slight complication, we need an initial value for slack. Either we do
 ## Memoization (for real this time)
 
 
-We can add caching with yet another state monad, we only need to produce a cache key for the arguments to the cached function. For Wordle we can do this as 5 `Word32` arguments that encode a bitset. If letter `a` can still occur in position `1`, then the first bit in the first `Word32` is set. This requires some care for guesses with repeated letters, and we cannot represent `there is exactly one letter z at an unkown location`, but it works well enough to find an optimal solution and is reasonably memory efficient.
+We can add caching with yet another state monad, we only need to produce a cache key for the arguments to the cached function. For Wordle we can do this as 5 `Word32` arguments that encode a bitset. If letter `a` can still occur in position `1`, then the first bit in the first `Word32` is set. This becomes rather janky if we guess a word in which a letter occurs multiple times because we cannot store frequency information like `letter a must appear twice in unkown positions`.  It works well enough to find an optimal solution and is reasonably memory efficient, though.
 
-But the context sensitivity strikes again. If we first compute a solution at depth 4 we prune whenever we go above depth 6, so we only consider solutions of height 2 or less. If we later encounter the same arguments at depth 3 then we have ot consider previously pruned solutions, maybe one is mostly flat but has a single length-three guess chain. On the other hand, if we find an amazingly great solution that has only depth 2 then we should use the cached result.
+But the context sensitivity strikes again. If we first compute a solution at depth 4 we prune whenever we go above depth 6, so we only consider solutions of height 2 or less. If we later encounter the same arguments at depth 3 then we have to consider previously pruned solutions, maybe some solution is mostly flat but has a single length-three guess chain. On the other hand, if we find an amazingly great solution that has only depth 2 then we should use the cached result.
 
 A simple solution is to cache by key and context, and allowing a single call to emit solutions for multiple contexts. This means a result with depth 2 is inserted in the cache at depths `[2..6]`, and independently merged at each level. 
 
     newtype Caching k c o a = Caching { unCaching :: State (M.Map k (M.Map c o)) a }
         deriving (Functor, Applicative, Monad)
 
- Expensive subproblems (guessing `pizza` first) also takes longer to compute, so if they often get pruned we never store a result and don't actually use the cache. We can exploit the polymorphism by inserting `Either MinCost RealCost` in the cache, storing some lower bound as `Left` if we prune early. This makes it more likely that we can use the cache when computing the `min_cost` heuristic, letting us prune earlier.
+ Expensive subproblems (guessing `pizza` first) also take longer to compute, so if they often get pruned we never store a result and don't actually use the cache. We can exploit the polymorphism by inserting `Either MinCost RealCost` in the cache, storing some lower bound as `Left` if we prune early. This makes it more likely that we can use the cache when computing the `min_cost` heuristic, letting us prune earlier in bad search areas.
 
 ## Summary
 
@@ -193,4 +193,5 @@ The Caching strategy, and creating multiple entries in a map, seems fairly ineff
 
 For a deep dive into the world of branch-and-bound algorithms [this paper seems like a good overview](https://www.sciencedirect.com/science/article/pii/S1572528616000062).
 
+If there are existing approaches of encoding automatic pruning in Haskell (or approaches for hacky context gathering) out there please tell me, I'd love to hear about them!
 
