@@ -176,7 +176,7 @@ We can add caching with yet another state monad, we only need to produce a cache
 
 But the context sensitivity strikes again. If we first compute a solution at depth 4 we prune whenever we go above depth 6, so we only consider solutions of height 2 or less. If we later encounter the same arguments at depth 3 then we have to consider previously pruned solutions, maybe some solution is mostly flat but has a single length-three guess chain. On the other hand, if we found an amazingly great solution that has only depth 2 then we should use the cached result.
 
-A simple solution is to cache by key and context, and allowing a single call to emit solutions for multiple contexts. This means a result with depth 2 is inserted in the cache at depths `[2..6]`, and independently merged at each level. 
+A simple solution is to cache by key and context, and allowing a single call to emit solutions for multiple contexts. This means a result with depth 2 is inserted in the cache at depths `[1..4]`, and independently merged at each level. 
 
     newtype Caching k c o a = Caching { unCaching :: State (M.Map k (M.Map c o)) a }
         deriving (Functor, Applicative, Monad)
