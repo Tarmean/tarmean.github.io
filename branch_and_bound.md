@@ -129,7 +129,29 @@ When we reach a `withMinCost` annotation, which gives a heuristic cost for the c
     withMinCost :: Cost c o s => o -> BnB c o s m a -> BnB c o s m a
     withMinCost o m = liftRight (LowerBound o) *> (liftLeft (increaseSlack o) >> m)
 
+A small example might be useful here:
 
+    test fooBar barFoo = do
+        withMinCost 5 $ do
+            when fooBar (tellCost 1)
+            tellCost 5
+        withMinCost 3 $ do
+            when barFoo (tellCost 1)
+            tellCost 3
+    
+    
+Now if we run `test True False` after `-XApplicativeDo` rewrites the definition into `*>`, we execute:
+
+
+    reduceSlack 8 -- `>>=` pre-pays 
+    increaseSlack 5 -- `withMinCost` refunds
+    when True (tellCost 1)
+    tellCost 5
+    increaseSlack 3 -- `withMinCost` refunds
+    when False (tellCost 1)
+    tellCost 3
+
+    
 We can then write a rather ugly loop which keeps track of the best solution found so far:
 
     pickBest :: (Monad m, Cost c o s, Monoid o) => BnB c o s m a -> c -> s -> m (Maybe (a,o))
