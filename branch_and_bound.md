@@ -143,15 +143,15 @@ A small example might be useful here:
 Now if we run `test True False` after `-XApplicativeDo` rewrites the definition into `*>`, we execute:
 
 
-    reduceSlack 8 -- `>>=` (or the run function) pre-pays 
-    increaseSlack 5 -- `withMinCost` refunds
-    when True (tellCost 1)
-    tellCost 5
-    increaseSlack 3 -- `withMinCost` refunds
-    when False (tellCost 1)
-    tellCost 3
+    reduceSlack 8 -- `>>=` (or the run function) pre-pays (-8)
+    increaseSlack 5 -- `withMinCost` refunds (-3)
+    when True (tellCost 1) -- (-4)
+    tellCost 5 -- (-9)
+    increaseSlack 3 -- `withMinCost` refunds (-6)
+    when False (tellCost 1) -- (-6)
+    tellCost 3 -- (-9)
 
-    
+If at any step our incoming slack isn't sufficient we abort without having to run the rest.    
 We can then write a rather ugly loop which keeps track of the best solution found so far:
 
     pickBest :: (Monad m, Cost c o s, Monoid o) => BnB c o s m a -> c -> s -> m (Maybe (a,o))
