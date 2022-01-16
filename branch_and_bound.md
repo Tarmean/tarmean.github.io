@@ -144,7 +144,7 @@ We can then write a rather ugly loop which keeps track of the best solution foun
                  Just (_,out') | out' >= out -> go slack acc n
                  _ -> go (inContext ctx out) (Just (a,out)) n
 
-By wrapping the cost in `Maybe` we sidestep problems if we don't have an initial maximum cost. If we want to add additional pruning, like not going past depth 6, we can adjust the cost/slack/context types.
+There is a slight complication, we need an initial value for slack. Either we do a first heuristic pass to find some reasonable guess, or we instantiate with `Maybe WordleSlack` and skip pruning when the cost is `Nothing`. If we want to add additional pruning, like not going past depth 6, we can similarly adjust the cost/slack/context types.
 
 
 ## Memoization (for real this time)
@@ -152,14 +152,14 @@ By wrapping the cost in `Maybe` we sidestep problems if we don't have an initial
 
 We can add caching with yet another state monad, we only need to produce a cache key for the arguments to the cached function. For Wordle we can do this as 5 `Word32` arguments that encode a bitset. If letter `a` can still occur in position `1`, then the first bit in the first `Word32` is set. This requires some care for guesses with repeated letters, and we cannot represent `there is exactly one letter z at an unkown location`, but it works well enough to find an optimal solution and is reasonably memory efficient.
 
-But the context sensitivity strikes again. If we first compute a solution at depth 4 and later encounter the same arguments at depth 3 then we might find a previously pruned solution that is mostly flat but has a single length-three guess chain. On the other hand, if we find an amazingly great solution that has only depth 2 then we should use the cached result.
+But the context sensitivity strikes again. If we first compute a solution at depth 4 we prune whenever we go above depth 6, so we only consider solutions of height 2 or less. If we later encounter the same arguments at depth 3 then we have ot consider previously pruned solutions, maybe one is mostly flat but has a single length-three guess chain. On the other hand, if we find an amazingly great solution that has only depth 2 then we should use the cached result.
 
-A simple solution is to cache by key and context, and allowing a single call to emit solutions for multiple contexts.
+A simple solution is to cache by key and context, and allowing a single call to emit solutions for multiple contexts. This means a result with depth 2 is inserted in the cache at depths `[2..6]`, and independently merged at each level. 
 
     newtype Caching k c o a = Caching { unCaching :: State (M.Map k (M.Map c o)) a }
         deriving (Functor, Applicative, Monad)
 
-We can exploit the polymorphism by inserting `Either MinCost RealCost` in the cache, that way we retain some information even if we prune a call. This frequently lets us use the cache when computing the `min_cost` heuristic, letting us prune earlier.
+ Expensive subproblems (guessing `pizza` first) also takes longer to compute, so if they often get pruned we never store a result and don't actually use the cache. We can exploit the polymorphism by inserting `Either MinCost RealCost` in the cache, storing some lower bound as `Left` if we prune early. This makes it more likely that we can use the cache when computing the `min_cost` heuristic, letting us prune earlier.
 
 ## Summary
 
@@ -168,3 +168,7 @@ And that's everything I wanted to cover. We could add a fancier search monad tha
 I do not think I actually would use this approach. `-XApplicativeDo` is immensely hard to reason about, and the wrong batching could cause orders of magnitude slowdown in a search. Using newtypes in the style of the `async` library on the other hand seems reasonable.
 
 The Caching strategy, and creating multiple entries in a map, seems fairly inefficient. It'd also become much more complex contexts with partial orderings, maybe storing a list of cache entries as an lru cache or compressing them with chain decomposition could work.
+
+For a deep dive into the world of branch-and-bound algorithms [this paper seems like a good overview](https://www.sciencedirect.com/science/article/pii/S1572528616000062).
+
+
