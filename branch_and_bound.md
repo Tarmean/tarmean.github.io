@@ -22,7 +22,7 @@ Much more concrete, and quite close to alpha-beta-pruning for game trees. For so
 
 ## In Haskell
 
-To abstract over all this in Haskell we will use a monad transformer. We can express alternatives with the `Alternative` typeclass, `a <|> b`. Sequential steps naturally fit as a monad. The monad can keep track of the *slack* we have left - whenever we emit a cost we reduce the slack, once we reach `0` we can prune the current computation:
+To abstract over all this in Haskell we will use a monad transformer. We can express alternatives with the `Alternative` typeclass, `a <|> b`. Sequential steps naturally fit as a monad. The monad can keep track of the *slack* we have left - whenever we emit a cost we reduce the slack, once we go below `0` we can prune the current computation:
 
     newtype Bound s a = Bound { unBound :: StateT s [] a }
         deriving (Monad, Applicative, Alternative, Functor, MonadState s, MonadFail)
