@@ -3,9 +3,9 @@
 ## Introduction
 
 [Wordle](https://www.powerlanguage.co.uk/wordle/) is a Mastermind-like browser game where you guess five-letter words. The game answers which letters are correct, in the wrong position, or flat out wrong. You have 6 guesses to win. This is a great balance because most people win most of the time, but I still feel like an absolute genius whenever I do.  
-Here is an interesting meta-puzzle: What is the optimal Wordle strategy? We can figure this out with Branch and Bound (BnB). BnB describes a class of algorithms I hadn't heard of for the longest time, probably because the literature tends to be *really* vague. Lets try to find the essence of BnB by abstracting over it, in Haskell.
+Here is an interesting meta-puzzle: What is the optimal Wordle strategy? We can figure this out with Branch and Bound (BnB). BnB describes a class of algorithms I hadn't heard of for the longest time, probably because the literature tends to be *really* vague.
 
-Maybe I should mention my final solution ended up being in Rust because it turned out immensely easier to write memory-efficient code there. The first Haskell version took 20GB+ of memory, Rust using bitsets used 50MB. So in my defense, any code-crimes perpetrated here are mostly theoretic.
+Maybe I should mention my final solution ended up being in Rust because it turned out immensely easier to write memory-efficient code there. The first Haskell version took 20GB+ of memory, Rust using bitsets used 50MB. But while reimplementing the code I really wanted to abstract over the pruning search. And I came up with a hacky approach - but it only works in Haskell. This post is a brief sketch of this approach.
 
 All descriptions of BnB I could find concur on the following steps:
 
@@ -133,7 +133,7 @@ When we reach a `withMinCost` annotation, which gives a heuristic cost for the c
 We can then write a rather ugly loop which keeps track of the best solution found so far:
 
     pickBest :: (Monad m, Cost c o s, Monoid o) => BnB c o s m a -> c -> s -> m (Maybe (a,o))
-    pickBest (BnB (MB m0 (LowerBound bound0))) ctx0 slack0 = flip evalStateT slack0 $ go s0 Nothing $ flip runStateT (ctx0, mempty) $ unBoundM $ reduceSlack bound0 *> m0 
+    pickBest (BnB (MB m0 (LowerBound bound0))) ctx0 slack0 = flip evalStateT slack0 $ go slack0 Nothing $ flip runStateT (ctx0, mempty) $ unBoundM $ reduceSlack bound0 *> m0 
       where
         go slack acc m = do
            put slack
