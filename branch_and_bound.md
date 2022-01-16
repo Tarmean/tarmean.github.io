@@ -91,9 +91,12 @@ We also need a monad to track the minimum of every `Applicative` branch we can s
     instance (Monoid o) => Applicative (LowerBound o) where
         pure _ = LowerBound mempty
         LowerBound l <*> LowerBound r = LowerBound $ l <> r
-    instance (Monoid o, Ord o) => Alternative (LowerBound o) where
-        empty = LowerBound mempty
-        LowerBound l <|> LowerBound r = LowerBound $ l `min` r
+    class MonoidAlt o where
+         memptyAlt :: o
+         alt :: o -> o -> o
+    instance (MonoidAlt o, Ord o) => Alternative (LowerBound o) where
+        empty = LowerBound memptyAlt
+        LowerBound l <|> LowerBound r = LowerBound $ l `alt` r
 
 
 We can then combine the monads by running them `Both`:
