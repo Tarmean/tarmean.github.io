@@ -2,7 +2,7 @@
 
 ## Introduction
 
-[Wordle](https://www.powerlanguage.co.uk/wordle/) is a Mastermind-like browser game where you guess five-letter words. The game answers which letters are correct, in the wrong position, or flat out wrong. You have 6 guesses to win. This is a great balance because most people win most of the time, but I still like an absolute genius whenever I do.  
+[Wordle](https://www.powerlanguage.co.uk/wordle/) is a Mastermind-like browser game where you guess five-letter words. The game answers which letters are correct, in the wrong position, or flat out wrong. You have 6 guesses to win. This is a great balance because most people win most of the time, but I still feel like an absolute genius whenever I do.  
 Here is an interesting meta-puzzle: What is the optimal Wordle strategy? We can figure this out with Branch and Bound (BnB). BnB describes a class of algorithms I hadn't heard of for the longest time, probably because the literature tends to be *really* vague. Lets try to find the essence of BnB by abstracting over it, in Haskell.
 
 Maybe I should mention my final solution ended up being in Rust because it turned out immensely easier to write memory-efficient code there. The first Haskell version took 20GB+ of memory, Rust using bitsets used 50MB. So in my defense, any code-crimes perpetrated here are mostly theoretic.
