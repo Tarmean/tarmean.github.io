@@ -189,7 +189,7 @@ And that's everything I wanted to cover.
 
 I do not think I actually would use this approach. `-XApplicativeDo` is immensely hard to reason about, and the wrong batching could cause orders of magnitude slowdown in a search. Using newtypes in the style of the `async` library on the other hand seems reasonable.
 
-The Caching strategy, and creating multiple entries in a map, seems fairly inefficient. It'd also become much more complex contexts with partial orderings, maybe storing a list of cache entries as an lru cache or compressing them with chain decomposition could work.   
+The Caching strategy, and creating multiple entries in a map, seems fairly inefficient. It'd would be much worse for contexts with partial orderings, maybe storing a list of cache entries as an lru cache or compressing them with chain decomposition could work.   
  We could add a fancier search monad that `Stream` to mix in best first search/cyclic best first search, or add fancier pruning strategies.
 
 
