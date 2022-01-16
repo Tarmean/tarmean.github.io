@@ -181,7 +181,7 @@ A simple solution is to cache by key and context, and allowing a single call to 
     newtype Caching k c o a = Caching { unCaching :: State (M.Map k (M.Map c o)) a }
         deriving (Functor, Applicative, Monad)
 
- Expensive subproblems (guessing `pizza` first) also take longer to compute, so if they often get pruned we never store a result and don't actually use the cache. We can exploit the polymorphism by inserting `Either MinCost RealCost` in the cache, storing some lower bound as `Left` if we prune early. This makes it more likely that we can use the cache when computing the `min_cost` heuristic, letting us prune earlier in bad search areas.
+ Some subproblems (guessing `pizza` first) take longer to compute, but because they usually get pruned before finishing we don't actually cache their cost. We can exploit the polymorphism by inserting `Either MinCost RealCost` in the cache, storing some lower bound as `Left` if we prune early. This makes it more likely that we can use the cache when computing the `min_cost` heuristic, letting us prune earlier in bad search areas.
 
 ## Rambly Ending
 
