@@ -157,14 +157,14 @@ We can then write a rather ugly loop which keeps track of the best solution foun
     pickBest :: (Monad m, Cost c o s, Monoid o) => BnB c o s m a -> c -> s -> m (Maybe (a,o))
     pickBest (BnB (MB m0 (LowerBound bound0))) ctx0 slack0 = flip evalStateT slack0 $ go slack0 Nothing $ flip runStateT (ctx0, mempty) $ unBoundM $ reduceSlack bound0 *> m0 
       where
-        go slack acc m = do
-           put slack
+        go oldSlack oldBest m = do
+           put oldSlack
            step <- runStream m
            case step of
               Done -> pure acc
-              Yield (a,(ctx,out)) n -> case acc of
-                 Just (_,out') | out' >= out -> go slack acc n
-                 _ -> go (inContext ctx out) (Just (a,out)) n
+              Yield (a,(ctx,newCost)) n -> case oldBest of
+                 Just (_,oldCost) | newCost >= oldCost -> go oldSlack oldBest n
+                 _ -> go (inContext ctx newCost) (Just (a,newCost)) n
 
 There is a slight complication, we need an initial value for slack. Either we do a first heuristic pass to find some reasonable guess, or we instantiate with `Maybe WordleSlack` and skip pruning when the cost is `Nothing`. If we want to add additional pruning, like not going past depth 6, we can similarly adjust the cost/slack/context types.
 
