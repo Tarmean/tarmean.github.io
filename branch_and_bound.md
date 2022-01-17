@@ -161,7 +161,7 @@ We can then write a rather ugly loop which keeps track of the best solution foun
            put oldSlack
            step <- runStream m
            case step of
-              Done -> pure acc
+              Done -> pure oldBest
               Yield (a,(ctx,newCost)) n -> case oldBest of
                  Just (_,oldCost) | newCost >= oldCost -> go oldSlack oldBest n
                  _ -> go (inContext ctx newCost) (Just (a,newCost)) n
