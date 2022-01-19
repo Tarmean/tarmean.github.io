@@ -65,11 +65,15 @@ If we use this cached tree in another position, and this position is at depth `3
           | otherwise = Nothing
           where leftover = l - r
 
-    class (Slack s, Monoid o, MonoidAlt o) => Cost c o s where
+    class (Slack s, Semiring o) => Cost c o s where
         inContext :: c -> o -> s
-    class MonoidAlt o where
-         memptyAlt :: o
-         alt :: o -> o -> o
+
+    -- | The monoid instance merges sequential costs,
+    -- Semiring merges alternative cost, e.g. Maybe (Sum Int)
+    -- zero is failure, plus takes the smaller non-failed cost
+    class Monoid o => Semiring o where
+         zero :: o
+         plus :: o -> o -> o
 
     data WordleCost = WCost { totalCost :: Int, nodeCount :: Int }
       deriving Monoid via GenericAs WordleCost (Sum Int, Sum Int)
@@ -95,8 +99,8 @@ We also need a monad to track the minimum of every `Applicative` branch we can s
         pure _ = LowerBound mempty
         LowerBound l <*> LowerBound r = LowerBound $ l <> r
     instance (MonoidAlt o) => Alternative (LowerBound o) where
-        empty = LowerBound memptyAlt
-        LowerBound l <|> LowerBound r = LowerBound $ l `alt` r
+        empty = LowerBound zero
+        LowerBound l <|> LowerBound r = LowerBound $ l `plus` r
 
 
 We can then combine the monads by running them `Both`:
@@ -154,7 +158,7 @@ Now if we run `test True False` after `-XApplicativeDo` rewrites the definition 
 If at any step our incoming slack is insufficient, we abort without having to run the rest. Because the code is trivial `withMinCost` doesn't carry more information than the bodies, but for branching code or recursive functions we need to supply a heuristic.   
 We can then write a rather ugly loop which keeps track of the best solution found so far:
 
-    pickBest :: (Monad m, Cost c o s, Monoid o) => BnB c o s m a -> c -> s -> m (Maybe (a,o))
+    pickBest :: (Monad m, Cost c o s, Semiring o, Ord o) => BnB c o s m a -> c -> s -> m (Maybe (a,o))
     pickBest (BnB (MB m0 (LowerBound bound0))) ctx0 slack0 = flip evalStateT slack0 $ go slack0 Nothing $ flip runStateT (ctx0, mempty) $ unBoundM $ reduceSlack bound0 *> m0 
       where
         go oldSlack oldBest m = do
