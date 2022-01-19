@@ -70,9 +70,9 @@ If we use this cached tree in another position, and this position is at depth `3
     class MonoidAlt o where
          memptyAlt :: o
          alt :: o -> o -> o
+
     data WordleCost = WCost { totalCost :: Int, nodeCount :: Int }
       deriving Monoid via GenericAs WordleCost (Sum Int, Sum Int)
-      deriving MonoidAlt via GenericAs WordleCost (Min Int, Min Int)
       deriving Ord
     newtype WordleContext = Depth Int
 
