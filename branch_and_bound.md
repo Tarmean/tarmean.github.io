@@ -65,11 +65,14 @@ If we use this cached tree in another position, and this position is at depth `3
           | otherwise = Nothing
           where leftover = l - r
 
-    class (Slack s, Monoid o) => Cost c o s where
+    class (Slack s, Monoid o, MonoidAlt o) => Cost c o s where
         inContext :: c -> o -> s
-
+    class MonoidAlt o where
+         memptyAlt :: o
+         alt :: o -> o -> o
     data WordleCost = WCost { totalCost :: Int, nodeCount :: Int }
-      deriving Monoid via (Sum Int, Sum Int)
+      deriving Monoid via Generically (Sum Int, Sum Int)
+      deriving MonoidAlt via Generically (Min Int, Min Int)
       deriving Ord
     newtype WordleContext = Depth Int
 
@@ -91,9 +94,6 @@ We also need a monad to track the minimum of every `Applicative` branch we can s
     instance (Monoid o) => Applicative (LowerBound o) where
         pure _ = LowerBound mempty
         LowerBound l <*> LowerBound r = LowerBound $ l <> r
-    class MonoidAlt o where
-         memptyAlt :: o
-         alt :: o -> o -> o
     instance (MonoidAlt o) => Alternative (LowerBound o) where
         empty = LowerBound memptyAlt
         LowerBound l <|> LowerBound r = LowerBound $ l `alt` r
