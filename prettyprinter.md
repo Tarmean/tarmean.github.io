@@ -88,14 +88,15 @@ For consumers we have many options, one for each output type. Thankfully this ma
 
 As mentioned, this is a pretty rough introduction to `Prettyprinter`'s internals. We haven't discussed any of the actually useful combinators. Thankfully, the [the documentation](https://hackage.haskell.org/package/prettyprinter-1.7.1/docs/Prettyprinter.html) is solid once you have understood grouping and indentation. Feel free to click `view source` if the documentation is unclear, most combinators are thin wrappers around the internals we discussed. Good luck with pretty printing!
 
-To prove my point here are the helpers we used in the example[^1]:
+To prove my point here are the helpers we used in the example:
 
 ```Haskell
 (<>) = Cat
 (<+>) a b = a <> Char ' ' <> b
 line = FlatAlt Line (Char ' ')
-encloseSep l r sep ds = l <> mconcat (intersperse sep ds) <> r
-```
 
-[^1]: The library `encloseSep`  also works for multiple lines, using a haskell-style leading seperator.
+encloseSep l r sep ds = l <> mconcat (intersperse sepWithNL ds) <> line' <> r
+  where sepWithNL = line' <> sep -- haskell style leading seperators
+line' = FlatAlt Line Empty
+```
 
