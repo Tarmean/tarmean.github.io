@@ -86,7 +86,7 @@ For consumers we have many options, one for each output type. Thankfully this ma
 
 ### The End
 
-As mentioned, this is a pretty rough introduction to `Prettyprinter`'s internals. We haven't discussed any of the actually useful combinators. Thankfully, the [the documentation](https://hackage.haskell.org/package/prettyprinter-1.7.1/docs/Prettyprinter.html) is solid once you have understood grouping and indentation. Feel free to click `view source` if the documentation is unclear, most combinators are thin wrappers around the internals we discussed. Good luck with pretty printing!
+As mentioned, this is a pretty rough introduction to `Prettyprinter`'s internals. We haven't discussed any of the actually useful combinators. Thankfully,  [the documentation](https://hackage.haskell.org/package/prettyprinter-1.7.1/docs/Prettyprinter.html) is solid once you have understood grouping and indentation. Feel free to click `view source` if the documentation is unclear, most combinators are thin wrappers around the internals we discussed. Good luck with pretty printing!
 
 To prove my point here are the helpers we used in the example:
 
