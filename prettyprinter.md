@@ -2,12 +2,12 @@
 
 There are many prettyprinter libraries in Haskell, but most are based on Phillip Wadler's paper `A prettier printer`.
 
-To learn Haskell libraries I usually peak at the implementation, but `Prettier` defeated me twice. Partly because printing is rarely the most interesting part of a project. But Wadler's approach also has some action-at-a-distance which makes it tricky to understand the pieces in isolation.
-This is a very brief and rough introduction into how Prettier actually works. It is not a guide on how to use it, but after understanding the big ideas it should be easier to read the documentation and source code.
+To learn Haskell libraries I usually peak at the implementation, but `Prettyprinter` defeated me twice. Partly because printing is rarely the most interesting part of a project. But Wadler's approach also has some action-at-a-distance which makes it tricky to understand the pieces in isolation.
+This is a very brief and rough introduction into how Prettyprinter actually works. It is not a guide on how to use it, but after understanding the big ideas it should be easier to read the documentation and source code.
 
 ### Example: 
 
-First a small example to understand what Prettier does. This is a Haskell-style let binding:
+First a small example to understand what Prettyprinter does. This is a Haskell-style let binding:
 ```haskell
 pretty (Let binds body)
     = group ("let" <+> align letBinds <> line <> "in" <+> pretty body)
@@ -37,7 +37,7 @@ Fancy! But a bit magical. What do the `group` and `align` functions do exactly?
 
 ### The core trick
 
-Prettier has a small datatype to describe documents. The trick we just saw uses an internal constructor `data Doc = ... | Union Doc Doc`.  A better name might be `Alt`; it makes the document non-deterministic and layouting a (greedy) search. We try to layout with the first branch if it fits, and fall back onto the second otherwise.
+Prettyprinter has a small datatype to describe documents. The trick we just saw uses an internal constructor `data Doc = ... | Union Doc Doc`.  A better name might be `Alt`; it makes the document non-deterministic and layouting a (greedy) search. We try to layout with the first branch if it fits, and fall back onto the second otherwise.
 
 But this does not quite explain everything. Notably, the following layouts are impossible:
 
