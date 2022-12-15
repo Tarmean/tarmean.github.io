@@ -93,6 +93,7 @@ To prove my point here are the helpers we used in the example:
 ```Haskell
 (<>) = Cat
 (<+>) a b = a <> Char ' ' <> b
+-- newline, but in `group` try a space instead
 line = FlatAlt Line (Char ' ')
 
 encloseSep l r sep ds = l <> mconcat (intersperse sepWithNL ds) <> line' <> r
