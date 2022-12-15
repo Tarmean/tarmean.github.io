@@ -2,7 +2,7 @@
 
 There are many prettyprinter libraries in Haskell, but most are based on Phillip Wadler's paper `A prettier printer`.
 
-To learn Haskell libraries I usually peak at the implementation, but `Prettier` defeated me twice. Partly because pretty-printing is rarely intrinsic. I want to get on with whatever I'm trying to pretty up. But `Prettier` also has some action-at-a-distance which is rarely seen in Haskell. It is hard to understand the pieces in isolation.
+To learn Haskell libraries I usually peak at the implementation, but `Prettier` defeated me twice. Partly because printing is rarely the most interesting part of a project. But Wadler's approach also has some action-at-a-distance which is rarely seen in Haskell and it can be difficult to understand the pieces in isolation.
 This is a very brief and rough introduction into how Prettier actually works. It is not a guide on how to use it, but after understanding the big ideas it should be easier to read the documentation and source code.
 
 ### Example: 
@@ -66,7 +66,7 @@ selectFlatVersion Empty = Empty
 selectFlatVersion ...
 ```
 
-Maybe it's just me but the mixed-up ordering of `FlatAlt` and `Union` seem needlessly confusing.
+Maybe it's just me but the mixed-up ordering of `FlatAlt` and `Union` feel needlessly confusing, especially because they have no meaning until some layout step interprets them. But once we understand what the pieces do everything clicks together and the approach seems almost natural. Neat!
 
 ### Indentation
 
