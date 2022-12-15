@@ -80,9 +80,9 @@ Turning a `Doc` into a something we can consume takes two steps
 - Use `layoutPretty defaultLayoutOptions` to get a `SimpleDocStream`
 - Use a consumer such as `Prettyprinter.Render.Text.renderStrict` to get Text
 
-The first option has other candidates such as `layoutSmart`. The difference is small: When picking a `Union`, `layoutPretty` only checks if the first line of the flat version fits. Meanwhile `layoutSmart`   checks if any future lines are too wide, stopping only when the indentation becomes flat.
+The first option has other candidates such as `layoutSmart`. The difference is small: When picking a `Union`, `layoutPretty` only checks if the first line of the flat version fits. Meanwhile `layoutSmart` checks if any future lines are too wide, stopping only when the indentation becomes flat. The latter is a heuristic because most syntax constructs end when indentation becomes flat - presumably to guard against non-linear behaviour.
 
-For consumer we have many options, one for each output type. Thankfully this makes the choice simple.
+For consumers we have many options, one for each output type. Thankfully this makes the choice simple. Just search the docs for the type you need. There are some external consumers on hackage, supporting fancy formats such as pandoc or terminals. If you want to dive deep you can add consumer specific annotations to documents, allowing for formatting or even onclick handlers.
 
 ### The End
 
