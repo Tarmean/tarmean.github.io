@@ -38,7 +38,7 @@ Fancy! But a bit magical. What do the `group` and `align` functions do exactly?
 ### The core trick
 
 First let us summarize our goal.
-We want alternative layouts: The newline version is narrow but long, the flat version is wide but flat. The layouting should pick the shortest version which fits some target width.
+We want alternative layouts: The newline version is narrow but long, the flat version is short but wide. The layouting should pick the shortest version which fits some target width.
 
 This means documents are non-deterministic, in the sense that lists are non-deterministic. Can we use lists?
 
