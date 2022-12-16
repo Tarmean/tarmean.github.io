@@ -145,7 +145,7 @@ Stop
     (Cat ["foo", Line, test])) -- test could be short or long
 ```
 
-Our approach differes slightly from `Prettyprinter`:
+Our approach differs slightly from `Prettyprinter`:
 Prettyprinter has no `Stop` constructor. Instead, it has `Union` and `FlatAlt`. `Union a b` is `Stop (Alts a b)`, `FlatAlt` is  `Alts a b`.
 Prettyprinter additionally uses a fairly subtle trick: `longVersion = id`. We know `shortVersion` will remove all `FlatAlt`'s. This means all remaining `FlatAlt's` should be long and we can keep them in the document. The layouting step must work around them, reimplementing our `longVersion`.
 
