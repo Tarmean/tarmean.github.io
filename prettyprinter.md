@@ -59,7 +59,7 @@ This has two key problems:
 - We generate exponentially many candidates and picking the best one is really expensive.
 - The choices are un-synchronized. We will cover this in a bit.
 
-The first problem is simple to solve. Using `liftA2` multiplies the lists out, generating all combinations in advance. We have all choices on top, and the document content below that. Instead, we interweave choices and document content by embedding them as a new constructor.
+The first problem is simple to solve. Using `liftA2` multiplies the lists out, generating all combinations in advance. We have all choices on top, and the document content below that. Instead, we interweave choices and document content by embedding them as a new constructor. Same idea as `ListT done right`!
 
 ```Haskell
 data Doc = Cat [Doc] -- concatentate documents
