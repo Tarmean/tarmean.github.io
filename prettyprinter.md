@@ -37,9 +37,47 @@ Fancy! But a bit magical. What do the `group` and `align` functions do exactly?
 
 ### The core trick
 
-Prettyprinter has a small datatype to describe documents. The trick we just saw uses an internal constructor `data Doc = ... | Union Doc Doc`.  A better name might be `Alt`; it makes the document non-deterministic and layouting a (greedy) search. We try to layout with the first branch if it fits, and fall back onto the second otherwise.
+First let us summarize our goal.
+We want alternative layouts: The newline version is narrow but long, the flat version is wide but flat. The layouting should pick the shortest version which fits some target width.
 
-But this does not quite explain everything. Notably, the following layouts are impossible:
+This means documents are non-deterministic, in the sense that lists are non-deterministic. Can we use lists?
+
+
+```Haskell
+newtype NondetDoc = ND [Doc]
+newline = ND [Char ' ', Newline]
+
+instance Semigroup NondetDoc where
+    (<>) a b = liftA2 (<>) a b
+
+-- >>> "foo" <> newline <> "bar" <> newline <> "baz"
+ND ["foo bar baz", "foo bar\nbaz", "foo\nbar baz", "foo bar baz"]
+```
+
+This has two key problems:
+
+- We generate exponentially many candidates and picking the best one is really expensive.
+- Thew newlines are un-synchronized. We will cover this in a bit.
+
+The first problem is simple to solve. Using `liftA2` multiplies the lists out, generating all combinations in advance. We have all choices on top, and the document content below that. Instead, we interweave choices and document content by embedding them as a new concstructor.
+
+```Haskell
+data Doc = Cat Doc Doc -- concatentate documents
+         | Char Char
+         | Union Doc Doc -- alternative documents
+instance Semigroup Doc where
+    (<>) = Cat
+```
+
+It allows layouting to perform a greedy search, rather than the depth-first search of the list monad. When layouting `Union a b`:
+
+- Check whether `a` fits the width. If yes, emit it.
+- Otherwise emit `b`.
+
+This is linear rather than exponential. First problem solved!
+
+
+The second problem is a luxury, but a great one to have. We want to synchronize certain choices. For instance, the following layouts should be impossible:
 
 ```Haskell
 let x = 3
@@ -49,24 +87,28 @@ let {x = 3; y = 5}
 in x * y
 ```
 
+Intuitively, we take a sequence of choices like `[Union a b, Union c d]` and turn it into a choice of sequences `Union [a,b] [c,d]`. But this is too synchronized. Either the entire output is one line, or nothing is flat.
 
-Instead, alternatives in `Prettyprinter` work in two steps. Firstly, we use a new constructor `data Doc = ... | FlatAlt Doc Doc` to express choices. When interpreted this just picks the non-flat branch.
+Instead, alternatives in `Prettyprinter` work in two phases. Firstly, we use a new constructor `data Doc = ... | FlatAlt Doc Doc` to express choices. This is a noop, during layout we always pick the nested version.
 
-Secondly, the `group` operation tries to flatten a sub-document.
+Secondly, the `group` operation tries to flatten a sub-document. When `flatten` encouters an `Union` or `FlatAlt`, we only keep the flat alternative.
 
 ```Haskell
 group :: Doc -> Doc
-group a = Union (selectFlatVersion a) a
+group a = Union (flatten a) a
 
-selectFlatVersion :: Doc -> Doc
-selectFlatVersion (FlatAlt _ flat) = flat
-selectFlatVersion (Union flat _) = flat
-selectFlatVersion (Cat a b) = Cat (selectFlatVersion a) (selectFlatVersion b)
-selectFlatVersion Empty = Empty
-selectFlatVersion ...
+flatten :: Doc -> Doc
+flatten (FlatAlt _ flat) = flat
+flatten (Union flat _) = flat
+flatten (Cat a b) = Cat (flatten a) (flatten b)
+flatten Empty = Empty
+flatten (Char a) = Char a
 ```
 
-Maybe it's just me but the mixed-up ordering of `FlatAlt` and `Union` feel needlessly confusing, especially because they have no meaning until some layout step interprets them. But once we understand what the pieces do everything clicks together and the approach seems almost natural. Neat!
+A subtlety is that group keeps the non-flattened alternative untouched. 
+
+- In the flat branch, everything must be flat. There are is no non-determinism left.
+- The fallback, remains untouched. The layouting will ignore `FlatAlt`'s, so they use newlines. But nested `group`'s and `Union`'s can still pick the flat alternative.
 
 ### Indentation
 
@@ -100,4 +142,3 @@ encloseSep l r sep ds = l <> mconcat (intersperse sepWithNL ds) <> line' <> r
   where sepWithNL = line' <> sep -- haskell style leading seperators
 line' = FlatAlt Line Empty
 ```
-
