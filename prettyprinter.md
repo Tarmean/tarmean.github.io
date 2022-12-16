@@ -130,7 +130,7 @@ test = group $ Cat [Text "foo", newline, Text "bar", newline, Text "foobar"]
 Stop 
   (Alts 
     (Cat [Text "foo", Text " ", Text "bar", Text " ", Text "foobar"])
-    (Cat [Text "foo", Line, Text "bar", line, Text "foobar"]))
+    (Cat [Text "foo", Line, Text "bar", Line, Text "foobar"]))
 ```
 
 it is important to note the asymmetry between `shortVersion` and `longVersion`. Our `shortVersion` never contains newlines. But in `longVersion` nested groups can still be short.
