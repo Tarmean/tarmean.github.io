@@ -22,7 +22,7 @@ pretty (Let binds body)
 Crucially, it can print in two distinct styles:
 
 ```haskell
--- >>> pretty $ Let [("x", 3), ("y", 5)] (Var "x" * Var "y")
+>>> pretty $ Let [("x", 3), ("y", 5)] (Var "x" * Var "y")
 
 -- if it fits into a single line:
 let {x = 3; y = 5} in x * y
@@ -50,7 +50,7 @@ newline = ND [Char ' ', Newline]
 instance Semigroup NondetDoc where
     (<>) a b = liftA2 (<>) a b
 
--- >>> "foo" <> newline <> "bar" <> newline <> "baz"
+>>> "foo" <> newline <> "bar" <> newline <> "baz"
 ND ["foo bar baz", "foo bar\nbaz", "foo\nbar baz", "foo\nbar\nbaz"]
 ```
 
