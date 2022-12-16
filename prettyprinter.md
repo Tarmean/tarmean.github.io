@@ -119,7 +119,7 @@ shortVersion (Alts _ flat) = flat
 shortVersion (Cat a) = Cat (map shortVersion a)
 shortVersion a = a
 ```
-Here is an example of how `group` functions:
+Here is an example of how `group` operates:
 
 ```Haskell
 newline = Alts (Text " ") Line
