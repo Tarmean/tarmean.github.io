@@ -147,8 +147,9 @@ Stop
 
 Our approach differens slightly from `Prettyprinter`:
 Prettyprinter has no `Stop` constructor. Instead, it has `Union` and `FlatAlt`. `Union a b` is `Stop (Alts a b)`, `FlatAlt` is roughly `Alts a b`.
-Prettyprinter additionally uses a fairly subtle trick: `longVersion = id`. We know `shortVersion` will remove all `FlatAlt`'s. This means all remaining `FlatAlt's` should be long and we can keep them in the document. The layouting step must be work around them, reimplementing our `longVersion`.  
-But this means without a surrounding `group` `FlatAlt` will always pick the long version.
+Prettyprinter additionally uses a fairly subtle trick: `longVersion = id`. We know `shortVersion` will remove all `FlatAlt`'s. This means all remaining `FlatAlt's` should be long and we can keep them in the document. The layouting step must work around them, reimplementing our `longVersion`.
+
+The impliciteness means `FlatAlt` has an implicit `longVersion` at the toplevel; without `group` nothing is flattend. Many operators use `group` internally, but it's something to keep in mind.
 
 ### Indentation
 
