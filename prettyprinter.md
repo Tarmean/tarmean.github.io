@@ -62,9 +62,10 @@ This has two key problems:
 The first problem is simple to solve. Using `liftA2` multiplies the lists out, generating all combinations in advance. We have all choices on top, and the document content below that. Instead, we interweave choices and document content by embedding them as a new constructor.
 
 ```Haskell
-data Doc = Cat Doc Doc -- concatentate documents
-         | Char Char
+data Doc = Cat [Doc] -- concatentate documents
+         | Text String
          | Union Doc Doc -- alternative documents
+         | Line -- Add a newline
 instance Semigroup Doc where
     (<>) = Cat
 ```
@@ -87,28 +88,50 @@ let {x = 3; y = 5}
 in x * y
 ```
 
-Intuitively, we take a sequence of choices like `[Union a b, Union c d]` and turn it into a choice of sequences `Union [a,b] [c,d]`. But this is too synchronized. Either the entire output is one line, or nothing is flat.
+Intuitively, we take a sequence of choices like `Cat [Union a b, Union c d]` and turn it into a choice of sequences `Union (Cat [a,b]) (Cat [c,d])`. But this is too synchronized. Either the entire output is one line, or nothing is flat.
 
-Instead, alternatives in `Prettyprinter` work in two phases. Firstly, we use a new constructor `data Doc = ... | FlatAlt Doc Doc` to express choices. This is a noop, during layout we always pick the nested version.
+Instead, alternatives in `Prettyprinter` work in two phases. Firstly, we use a new constructor `data Doc = ... | FlatAlt Doc Doc` to express choices. This is a noop, during layout we always pick the long version.
 
 Secondly, the `group` operation tries to flatten a sub-document. When `flatten` encouters an `Union` or `FlatAlt`, we only keep the flat alternative.
 
 ```Haskell
 group :: Doc -> Doc
-group a = Union (flatten a) a
+group a = Union (shortVersion a) (longVersion a)
 
-flatten :: Doc -> Doc
-flatten (FlatAlt _ flat) = flat
-flatten (Union flat _) = flat
-flatten (Cat a b) = Cat (flatten a) (flatten b)
-flatten Empty = Empty
-flatten (Char a) = Char a
+shortVersion :: Doc -> Doc
+shortVersion (FlatAlt _ flat) = flat
+shortVersion (Union flat _) = flat
+shortVersion (Cat a) = Cat (map shortVersion a)
+shortVersion Empty = Empty
+shortVersion (Text a) = Text a
+shortVersion Line = error "Cannot flatten newlines"
+
+longVersion :: Doc -> Doc
+longVersion (FlatAlt long) = long
+longVersion (Cat a) = Cat (map longVersion a)
+longVersion (Union flat long) = Union flat long
+longVersion Empty = Empty
+longVersion (Text a) = Text a
+longVersion Line = Line
 ```
 
-A subtlety is that group keeps the non-flattened alternative untouched. 
+Here is an example of how `group` functions:
 
-- In the flat branch, everything must be flat. There are is no non-determinism left.
-- The fallback, remains untouched. The layouting will ignore `FlatAlt`'s, so they use newlines. But nested `group`'s and `Union`'s can still pick the flat alternative.
+```Haskell
+newline = FlatAlt (Text " ") Line
+
+test = Cat [Text "bar", newline, Text "baz"]
+-- >>> group test
+-- Union (Cat [Text "bar", Text " ", Text "baz"]) (Cat [Text "bar", Line, Text "baz"])
+```
+
+it is important to note the asymmetry between `shortVersion` and `longVersion`. In `shortVersion`, every nested choice is short. There are no newlines. But `longVersion` leaves nested `Union`'s alone. If some outer `group` picks the long version, a nested `group` can still be short.
+
+```Haskell
+>>> group (Cat [Text "foo", newline, test])
+Union (Cat [Text "foo", " ", shortVersion inner]) (Cat [Text "foo", Line, inner])
+```
+The real version additionally uses a fairly subtle optimization: `longVersion = id`. During layouting we will always pick the long version in `FlatAlt`, so we can just leave them in the document.
 
 ### Indentation
 
