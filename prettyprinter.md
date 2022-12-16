@@ -64,7 +64,7 @@ The first problem is simple to solve. Using `liftA2` multiplies the lists out, g
 ```Haskell
 data Doc = Cat [Doc] -- concatentate documents
          | Text String
-         | Union Doc Doc -- alternative documents
+         | Alts Doc Doc -- alternative documents
          | Line -- Add a newline
 instance Semigroup Doc where
     (<>) = Cat
@@ -88,50 +88,57 @@ let {x = 3; y = 5}
 in x * y
 ```
 
-Intuitively, we take a sequence of choices like `Cat [Union a b, Union c d]` and turn it into a choice of sequences `Union (Cat [a,b]) (Cat [c,d])`. But this is too synchronized. Either the entire output is one line, or nothing is flat.
+Intuitively, we take a sequence of choices like `Cat [Union a b, Union c d]` and turn it into a choice of sequences `Alts (Cat [a,b]) (Cat [c,d])`. But this is too synchronized. Either the entire output is one line, or nothing is flat.
 
-Instead, alternatives in `Prettyprinter` work in two phases. Firstly, we use a new constructor `data Doc = ... | FlatAlt Doc Doc` to express choices. This is a noop, during layout we always pick the long version.
+We can solve this with two ingredients:
 
-Secondly, the `group` operation tries to flatten a sub-document. When `flatten` encouters an `Union` or `FlatAlt`, we only keep the flat alternative.
+- A scoped synchronization operator `group a = Alts (shortVersion a) (longVersion a)`
+- An additional `data Doc = ... | Stop Doc` constructor
 
 ```Haskell
-group :: Doc -> Doc
-group a = Union (shortVersion a) (longVersion a)
+data Doc = Cat [Doc]
+         | Alts Doc Doc
+         | Text String
+         | Line
+         | Stop Doc
 
-shortVersion :: Doc -> Doc
-shortVersion (FlatAlt _ flat) = flat
-shortVersion (Union flat _) = flat
-shortVersion (Cat a) = Cat (map shortVersion a)
-shortVersion Empty = Empty
-shortVersion (Text a) = Text a
-shortVersion Line = error "Cannot flatten newlines"
+group :: Doc -> Doc
+group a = Stop (Alts (shortVersion a) (longVersion a))
+
 
 longVersion :: Doc -> Doc
-longVersion (FlatAlt long) = long
+longVersion (Stop a) = Stop a
+longVersion (Alts long _) = long
 longVersion (Cat a) = Cat (map longVersion a)
-longVersion (Union flat long) = Union flat long
-longVersion Empty = Empty
-longVersion (Text a) = Text a
-longVersion Line = Line
-```
+longVersion a = a
 
+shortVersion :: Doc -> Doc
+shortVersion (Alts _ flat) = flat
+shortVersion (Stop a) = Stop (shortVersion a) -- cannot stop short
+shortVersion (Cat a) = Cat (map shortVersion a)
+shortVersion a = a
+```
 Here is an example of how `group` functions:
 
 ```Haskell
-newline = FlatAlt (Text " ") Line
+newline = Alts (Text " ") Line
 
-test = Cat [Text "bar", newline, Text "baz"]
--- >>> group test
--- Union (Cat [Text "bar", Text " ", Text "baz"]) (Cat [Text "bar", Line, Text "baz"])
+test = group $ Cat [Text "bar", newline, Text "baz"]
+-- >>> test
+-- Stop (Alts (Cat [Text "bar", Text " ", Text "baz"]) (Cat [Text "bar", Line, Text "baz"]))
 ```
 
-it is important to note the asymmetry between `shortVersion` and `longVersion`. In `shortVersion`, every nested choice is short. There are no newlines. But `longVersion` leaves nested `Union`'s alone. If some outer `group` picks the long version, a nested `group` can still be short.
+it is important to note the asymmetry between `shortVersion` and `longVersion`. Our `shortVersion` never contains newlines[^Prettyprinter is a bit more lenient]. But `longVersion` does not go past `Stop` constructors. If the short version of a group doesn't fit a nested `group` may still be short.
 
 ```Haskell
 >>> group (Cat [Text "foo", newline, test])
-Union (Cat [Text "foo", " ", shortVersion inner]) (Cat [Text "foo", Line, inner])
+Stop (Alts (Cat [Text "foo", " ", shortVersion test]) (Cat [Text "foo", Line, test]))
 ```
-The real version additionally uses a fairly subtle optimization: `longVersion = id`. During layouting we will always pick the long version in `FlatAlt`, so we can just leave them in the document.
+
+This presentation is different from `Prettyprinter` in two ways:
+
+- Prettyprinter has no `Stop` constructor. Instead, it has `Union` and `FlatAlt`. `FlatAlt` is our `Alts` constructor, `Union a b` is `Stop (Alts a b)`
+- Prettyprinter additionally uses a fairly subtle optimization: `longVersion = id`. Prettyprinter defaults to the long version of `FlatAlt` so we can just leave them in the document.
 
 ### Indentation
 
