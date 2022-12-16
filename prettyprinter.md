@@ -113,9 +113,9 @@ longVersion (Cat a) = Cat (map longVersion a)
 longVersion a = a
 
 shortVersion :: Doc -> Doc
-shortVersion (Alts _ flat) = flat
 -- the short version should always be a single line: walk into nested group
 shortVersion (Stop a) = shortVersion a
+shortVersion (Alts _ flat) = flat
 shortVersion (Cat a) = Cat (map shortVersion a)
 shortVersion a = a
 ```
