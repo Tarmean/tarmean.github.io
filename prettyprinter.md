@@ -48,7 +48,7 @@ newtype NondetDoc = ND [Doc]
 newline = ND [Char ' ', Newline]
 
 instance Semigroup NondetDoc where
-    (<>) a b = liftA2 (<>) a b
+    (<>) (ND a) (ND b) = ND $ liftA2 (<>) a b
 
 >>> "foo" <> newline <> "bar" <> newline <> "baz"
 ND ["foo bar baz", "foo bar\nbaz", "foo\nbar baz", "foo\nbar\nbaz"]
