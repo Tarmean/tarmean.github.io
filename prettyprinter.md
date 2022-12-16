@@ -128,7 +128,7 @@ test = group $ Cat [Text "bar", newline, Text "baz"]
 -- Stop (Alts (Cat [Text "bar", Text " ", Text "baz"]) (Cat [Text "bar", Line, Text "baz"]))
 ```
 
-it is important to note the asymmetry between `shortVersion` and `longVersion`. Our `shortVersion` never contains newlines ^[Prettyprinter is a bit more lenient]. But in `longVersion` nested groups can still be short.
+it is important to note the asymmetry between `shortVersion` and `longVersion`. Our `shortVersion` never contains newlines. But in `longVersion` nested groups can still be short.
 
 ```Haskell
 >>> group (Cat [Text "foo", newline, test])
