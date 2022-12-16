@@ -123,14 +123,16 @@ Here is an example of how `group` functions:
 
 ```Haskell
 newline = Alts (Text " ") Line
-
-test = group $ Cat [Text "foo", newline, Text "bar", newline, Text "foobar"]
+instance IsString Doc where
+    fromString = Doc
+    
+test = group $ Cat ["foo", newline, "bar", newline, "foobar"]
 
 >>> test
 Stop 
   (Alts 
-    (Cat [Text "foo", Text " ", Text "bar", Text " ", Text "foobar"])
-    (Cat [Text "foo", Line, Text "bar", Line, Text "foobar"]))
+    (Cat ["foo", " ", "bar", " ", "foobar"])
+    (Cat ["foo", Line, "bar", Line, "foobar"]))
 ```
 
 it is important to note the asymmetry between `shortVersion` and `longVersion`. Our `shortVersion` never contains newlines. But in `longVersion` nested groups can still be short.
