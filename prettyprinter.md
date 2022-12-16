@@ -45,7 +45,7 @@ This means documents are non-deterministic, in the sense that lists are non-dete
 
 ```Haskell
 newtype NondetDoc = ND [Doc]
-newline = ND [Char ' ', Newline]
+newline = ND [Text " ", Newline]
 
 instance Semigroup NondetDoc where
     (<>) (ND a) (ND b) = ND $ liftA2 (<>) a b
