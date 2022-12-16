@@ -138,8 +138,8 @@ Stop
 it is important to note the asymmetry between `shortVersion` and `longVersion`. Our `shortVersion` never contains newlines. But in `longVersion` nested groups can still be short.
 
 ```Haskell
->>> group (Cat [Text "baz", newline, test])
-Stop (Alts (Cat [Text "baz", " ", shortVersion test]) (Cat [Text "foo", Line, test]))
+>>> group (Cat ["baz", newline, test])
+Stop (Alts (Cat ["baz", " ", shortVersion test]) (Cat ["foo", Line, test]))
 ```
 
 This presentation is different from `Prettyprinter` in two ways:
