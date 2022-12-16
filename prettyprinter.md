@@ -124,16 +124,16 @@ Here is an example of how `group` functions:
 ```Haskell
 newline = Alts (Text " ") Line
 
-test = group $ Cat [Text "bar", newline, Text "baz"]
+test = group $ Cat [Text "foo", newline, Text "bar", newline, Text "foobar"]
 -- >>> test
--- Stop (Alts (Cat [Text "bar", Text " ", Text "baz"]) (Cat [Text "bar", Line, Text "baz"]))
+-- Stop (Alts (Cat [Text "foo", Text " ", Text "bar", Text " ", Text "foobar"]) (Cat [Text "foo", Line, Text "bar", line, Text "foobar"]))
 ```
 
 it is important to note the asymmetry between `shortVersion` and `longVersion`. Our `shortVersion` never contains newlines. But in `longVersion` nested groups can still be short.
 
 ```Haskell
->>> group (Cat [Text "foo", newline, test])
-Stop (Alts (Cat [Text "foo", " ", shortVersion test]) (Cat [Text "foo", Line, test]))
+>>> group (Cat [Text "baz", newline, test])
+Stop (Alts (Cat [Text "baz", " ", shortVersion test]) (Cat [Text "foo", Line, test]))
 ```
 
 This presentation is different from `Prettyprinter` in two ways:
