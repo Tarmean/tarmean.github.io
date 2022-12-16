@@ -125,8 +125,12 @@ Here is an example of how `group` functions:
 newline = Alts (Text " ") Line
 
 test = group $ Cat [Text "foo", newline, Text "bar", newline, Text "foobar"]
--- >>> test
--- Stop (Alts (Cat [Text "foo", Text " ", Text "bar", Text " ", Text "foobar"]) (Cat [Text "foo", Line, Text "bar", line, Text "foobar"]))
+
+>>> test
+Stop 
+  (Alts 
+    (Cat [Text "foo", Text " ", Text "bar", Text " ", Text "foobar"])
+    (Cat [Text "foo", Line, Text "bar", line, Text "foobar"]))
 ```
 
 it is important to note the asymmetry between `shortVersion` and `longVersion`. Our `shortVersion` never contains newlines. But in `longVersion` nested groups can still be short.
