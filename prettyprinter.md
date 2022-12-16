@@ -135,19 +135,20 @@ Stop
     (Cat ["foo", Line, "bar", Line, "foobar"]))
 ```
 
-it is important to note the asymmetry between `shortVersion` and `longVersion`. Our `shortVersion` never contains newlines. But in `longVersion` nested groups can still be short.
+it is important to note the asymmetry between `shortVersion` and `longVersion`. The `shortVersion` never contains newlines. But in `longVersion` nested groups are independent.
 
 ```Haskell
 >>> group (Cat ["baz", newline, test])
 Stop
   (Alts 
     (Cat ["baz", " ", shortVersion test])
-    (Cat ["foo", Line, test]))
+    (Cat ["foo", Line, test])) -- test could be short or long
 ```
 
-This presentation is different slightly from `Prettyprinter` in two ways:
-Prettyprinter has no `Stop` constructor. Instead, it has `Union` and `FlatAlt`. `Union a b` is `Stop (Alts a b)`, `FlatAlt` is roughy `Alts a b` 
-Prettyprinter additionally uses a fairly subtle trick: `longVersion = id`. We know `shortVersion` will remove all `FlatAlt`'s. This means all remaining `FlatAlt's` should be long and we can keep them in the document. The layouting step must be work around them, reimplementing our `longVersion`.
+This presentation is different slightly from `Prettyprinter`:
+Prettyprinter has no `Stop` constructor. Instead, it has `Union` and `FlatAlt`. `Union a b` is `Stop (Alts a b)`, `FlatAlt` is roughly `Alts a b`.
+Prettyprinter additionally uses a fairly subtle trick: `longVersion = id`. We know `shortVersion` will remove all `FlatAlt`'s. This means all remaining `FlatAlt's` should be long and we can keep them in the document. The layouting step must be work around them, reimplementing our `longVersion`.  
+But this means without a surrounding `group` `FlatAlt` will always pick the long version.
 
 ### Indentation
 
