@@ -139,7 +139,10 @@ it is important to note the asymmetry between `shortVersion` and `longVersion`. 
 
 ```Haskell
 >>> group (Cat ["baz", newline, test])
-Stop (Alts (Cat ["baz", " ", shortVersion test]) (Cat ["foo", Line, test]))
+Stop
+  (Alts 
+    (Cat ["baz", " ", shortVersion test])
+    (Cat ["foo", Line, test]))
 ```
 
 This presentation is different from `Prettyprinter` in two ways:
