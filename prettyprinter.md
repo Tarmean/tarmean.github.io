@@ -67,10 +67,10 @@ data Doc = Cat [Doc] -- concatentate documents
          | Alts Doc Doc -- alternative documents
          | Line -- Add a newline
 instance Semigroup Doc where
-    (<>) = Cat
+    (<>) a b = Cat [a,b]
 ```
 
-It allows layouting to perform a greedy search, rather than the depth-first search of the list monad. When layouting `Union a b`:
+Now layouting to perform a greedy search, rather than the depth-first search of the list monad. When layouting `Union a b`:
 
 - Check whether `a` fits the width. If yes, emit it.
 - Otherwise emit `b`.
@@ -174,7 +174,6 @@ As mentioned, this is a pretty rough introduction to `Prettyprinter`'s internals
 To prove my point here are the helpers we used in the example:
 
 ```Haskell
-(<>) = Cat
 (<+>) a b = a <> Char ' ' <> b
 -- newline, but in `group` try a space instead
 line = FlatAlt Line (Char ' ')
