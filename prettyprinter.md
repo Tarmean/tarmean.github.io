@@ -96,11 +96,11 @@ We can solve this with two ingredients:
 - An additional `data Doc = ... | Stop Doc` constructor
 
 ```Haskell
-data Doc = Cat [Doc]
-         | Alts Doc Doc
+data Doc = Cat [Doc] -- concatentate documents
          | Text String
-         | Line
-         | Stop Doc
+         | Alts Doc Doc -- alternative documents
+         | Line -- Add a newline
+         | Stop Doc -- Independent group, stop synchronizing
 
 group :: Doc -> Doc
 group a = Stop (Alts (shortVersion a) (longVersion a))
