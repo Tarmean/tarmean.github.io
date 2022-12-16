@@ -51,7 +51,7 @@ instance Semigroup NondetDoc where
     (<>) a b = liftA2 (<>) a b
 
 -- >>> "foo" <> newline <> "bar" <> newline <> "baz"
-ND ["foo bar baz", "foo bar\nbaz", "foo\nbar baz", "foo bar baz"]
+ND ["foo bar baz", "foo bar\nbaz", "foo\nbar baz", "foo\nbar\nbaz"]
 ```
 
 This has two key problems:
