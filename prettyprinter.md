@@ -145,7 +145,7 @@ Stop (Alts (Cat ["baz", " ", shortVersion test]) (Cat ["foo", Line, test]))
 This presentation is different from `Prettyprinter` in two ways:
 
 - Prettyprinter has no `Stop` constructor. Instead, it has `Union` and `FlatAlt`. `Union a b` is our `Stop (Alts a b)`, and `group` turns `FlatAlt` into `Union`. 
-- Prettyprinter additionally uses a fairly subtle optimization: `longVersion = id`. We can be careful so `FlatAlt`'s are only left in the document in the long branches. A later layouting steps then always picks the long option of `FlatAlt`. Essentially this defers `longVersion` until layouting.
+- Prettyprinter additionally uses a fairly subtle trick: `longVersion = id`. We know `shortVersion` will remove all `FlatAlt`'s. This means all remaining `FlatAlt's` should be long and we can keep them in the document. The layouting step must be careful to ignore them, reimplementing our `longVersion`.
 
 ### Indentation
 
