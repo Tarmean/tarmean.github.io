@@ -88,7 +88,7 @@ let {x = 3; y = 5}
 in x * y
 ```
 
-Intuitively, we take a sequence of choices like `Cat [Alts a b, Alts c d]` and turn it into a choice of sequences `Alts (Cat [a,b]) (Cat [c,d])`. But this is too synchronized. Either the entire output is one line, or nothing is flat.
+Intuitively, we take a sequence of choices like `Cat [Alts a b, Alts c d]` and turn it into a choice of sequences `Alts (Cat [a,c]) (Cat [b,d])`. But this is too synchronized. Either the entire output is one line, or nothing is flat.
 
 We can solve this with two ingredients:
 
