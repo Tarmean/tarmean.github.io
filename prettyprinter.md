@@ -70,7 +70,7 @@ instance Semigroup Doc where
     (<>) a b = Cat [a,b]
 ```
 
-Now layouting to perform a greedy search, rather than the depth-first search of the list monad. When layouting `Union a b`:
+Now layouting can perform a greedy search, rather than the depth-first search of the list monad. When layouting `Union a b`:
 
 - Check whether `a` fits the width. If yes, emit it.
 - Otherwise emit `b`.
