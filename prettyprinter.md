@@ -124,7 +124,7 @@ Here is an example of how `group` operates:
 ```Haskell
 newline = Alts (Text " ") Line
 instance IsString Doc where
-    fromString = Doc
+    fromString = Text
     
 test = group $ Cat ["foo", newline, "bar", newline, "foobar"]
 
