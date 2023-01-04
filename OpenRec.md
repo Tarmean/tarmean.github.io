@@ -241,5 +241,5 @@ However:
 - I have not done much benchmarking. The HitTest optimization seems to help, but a direct comparison against handwritten traversals would be nicer
 - `recurse` should only count as a success if the result differs from the original value. Some monad transformer should handle this, but I have not found a way to make this composable with user monads yet
 
-If anyone has ideas for the success tracking I'm all ears! If the API gets polished a bit further this could be a library instead of a neat design pattern.
+If anyone has ideas for the success tracking, or better inlining, I'm all ears! There is a reason fast OOP languages tend to run with a JIT compiler - specializing all indirect calls away would be fantastic. If the API gets polished a bit further this could be a library instead of a neat design pattern.
 Thanks for reading!
