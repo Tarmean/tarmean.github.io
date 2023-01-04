@@ -45,7 +45,7 @@ This allows us to write queries and transformations over mutually recursive type
 ```haskell
 -- | Collect all references which are used but not bound in the code block
 freeVarsQ :: Data a => a -> Set.Set Var
-freeVarsQ= runQ
+freeVarsQ = runQ
  (   tryQuery_ @Expr \case
        -- a variable use counts
        Ref v -> Just (Set.singleton v)
