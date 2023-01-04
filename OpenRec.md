@@ -28,6 +28,7 @@ data OrdDict a {
    ...
 }
 
+-- Here, `<` is a record selector which grabs the function from the `$dOrd` struct
 lessThan3 :: OrdDict Int -> Int -> Bool
 lessThan3 = \ $dOrd e -> (<) $dOrd e 3
 ```
