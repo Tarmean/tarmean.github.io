@@ -1,4 +1,4 @@
-# Haskell should have Inheritance
+# Haskell should have Inheritance[^1]
 
 Inheritance is an infamously overloaded concept, with use-cases ranging from templating to code reuse. Let us add a new one: Composable AST rewrites and queries.
 
@@ -243,3 +243,6 @@ However:
 
 If anyone has ideas for the success tracking, or better inlining, I'm all ears! There is a reason fast OOP languages tend to run with a JIT compiler - specializing all indirect calls away would be fantastic. If the API gets polished a bit further this could be a library instead of a neat design pattern.
 Thanks for reading!
+
+
+[^1]: If you don't like the title, feel free to use "Being Trans is super" instead
