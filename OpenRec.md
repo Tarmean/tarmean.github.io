@@ -72,8 +72,8 @@ bottomUp =
      (   tryTrans_ @Expr \case
               Minus x y
                 | y == x -> Just (Lit 0)
-              Plus (Const 0) y -> Just y
-              Plus y (Const 0) -> Just y
+              Plus (Lit 0) y -> Just y
+              Plus y (Lit 0) -> Just y
               _ -> Nothing
       ||| tryTrans_ @Lang \case
               Union Empty a -> Just a
