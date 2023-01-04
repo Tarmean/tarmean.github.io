@@ -131,7 +131,7 @@ Data.Data makes it easy to throw all transformations into one simple shape:
 type Trans1 m = forall x. Data x => x -> m x
 
 tryTrans1 :: forall a m. (Typeable a, Monad m) => (a -> m a) -> Trans1 m
-tryTrans1 f (x:: tx) = case eqT @a @x of
+tryTrans1 f (x:: tx) = case eqT @a @tx of
    Just Refl -> f x -- apply the transformation
    Nothing -> pure x -- keep the old value here
 ```
