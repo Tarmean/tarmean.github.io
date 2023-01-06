@@ -1,6 +1,6 @@
 # Haskell should have Inheritance
 
-Inheritance is an infamously overloaded concept, with use-cases ranging from templating to code reuse. Let us add a new one: Composable AST rewrites and queries.
+Inheritance is an infamously overloaded concept, with use-cases ranging over templating, ad-hoc polymorphism, code organization, method overriding, and even code reuse. Let us add a new one: Composable AST rewrites and queries.
 
 The code can be found [in this gist](https://gist.github.com/Tarmean/c8c986f6c1723be10b7454b53288e989). I have some minor open design questions so it hasn't made it into a library yet.
 
@@ -232,15 +232,16 @@ runT trans a0 = f a0
 
 ## Conclusion
 
-I have accidentally re-discovered this pattern multiple times and found it incredibly useful for quickly prototyping transformations. 
+I  accidentally re-discovered this pattern several times and have found it incredibly useful for quickly prototyping transformations. 
 I also have not seen it in the wild before and figured others might find it useful.
 
-However:
+However, I have not done much benchmarking. The HitTest optimization seems to help, but a thorough comparison against handwritten traversals would be nicer. I also have two open design questions:
 
-- I have not done much benchmarking. The HitTest optimization seems to help, but a direct comparison against handwritten traversals would be nicer
-- `recurse` should only count as a success if the result differs from the original value. Some monad transformer should handle this, but I have not found a way to make this composable with user monads yet
+- `recurse` should only count as a success if the result differs from the original value. Some monad transformer should handle this, but I have not found a nice way to make this composable with user monads yet
+- The `HitTest` implementation can break if users call the function at new types. Given `tryQuery @[Int] (\rec ls -> rec (head ls, last ls))`, the recursive call at `(Int, Int)` may be unknown. I changed the implementation to always visit unknown types, but could we do something smarter?
 
-If anyone has ideas for the success tracking, or better inlining, I'm all ears! There is a reason fast OOP languages tend to run with a JIT compiler - specializing all indirect calls away would be fantastic. If the API gets polished a bit further this could be a library instead of a neat design pattern.
+If anyone has ideas I'm all ears! There is a reason fast OOP languages tend to run with a JIT compiler - specializing the indirect calls away could make this as fast as hand-written code.  The [Optimizing generics is easy!](https://dl.acm.org/doi/abs/10.1145/1706356.1706366) paper may have some applicable wisdom to share. If the API gets polished a bit further this could be a library instead of a neat design pattern.
+
 Thanks for reading!
 
 
