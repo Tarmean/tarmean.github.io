@@ -1,12 +1,14 @@
-# Haskell should have Inheritance[^1]
+# Haskell should have Inheritance
 
 Inheritance is an infamously overloaded concept, with use-cases ranging from templating to code reuse. Let us add a new one: Composable AST rewrites and queries.
 
 The code can be found [in this gist](https://gist.github.com/Tarmean/c8c986f6c1723be10b7454b53288e989). I have some minor open design questions so it hasn't made it into a library yet.
 
-OOP languages support open recursion, by which I mean the `super` and `this` references. Instead of calling static methods, objects carry vtables which contain function pointers. In most languages `super` links a vtable to the parent-class vtable, forming a linked list. Meanwhile `this` always points to the top-most vtable of the object:
+OOP languages support open recursion, by which I mean the `super` and `this`/`self` references. Instead of calling static methods, objects carry vtables which contain function pointers. In most languages `super` links a vtable to the parent-class vtable, forming a linked list. Meanwhile `this` always points to the top-most vtable of the object:
 
 ![A linked list of vtables](./InheritanceLinkedList.svg)
+
+This vtable pattern is all we will take from inheritance. Sorry about the misleading title[^1].
 
 Haskell can do vtables: We could pass around records of functions, or make GHC do the legwork by using type-classes. In fact, this is how GHC implements type-classes before optimizing them:
 
@@ -33,7 +35,6 @@ lessThan3 :: OrdDict Int -> Int -> Bool
 lessThan3 = \ $dOrd e -> (<) $dOrd e 3
 ```
 
-
 Typeclasses are great because GHC optimizes them *hard*. Given enough INLINABLE pragmas it can replace most vtables with explicit calls. Additionally, the constraint solving executes a prolog-like logic program and can perform powerful code synthesis.  
 But type-classes are hard to compose: They are fundamentally type driven, so we must transform the `super` and `this` pointers into unique types and parametrize all code over them. This optimizes well, but is really boilerplate heavy. Transformer stacks are bad enough to look at and we would need two stacks. Additionally, GHC occasionally hangs if we go overboard with cyclic type classes when the constraint solver fails to memoize the cycles away.
 Records of functions tend to be slower, but they are easy to work with.
@@ -41,29 +42,6 @@ Records of functions tend to be slower, but they are easy to work with.
 Another probem is that open recursion is famously hard to reason about. To manage, we will restrict ourselves to a very limited form: We build a recursive function containing a case statement. The `super` pointers form a chain of possible cases, and `this` is the recursive call. 
 
 This allows us to write queries and transformations over mutually recursive types with minimal boilerplate:
-
-```haskell
--- | Collect all references which are used but not bound in the code block
-freeVarsQ :: Data a => a -> Set.Set Var
-freeVarsQ = runQ
- (   tryQuery_ @Expr \case
-       -- a variable use counts
-       Ref v -> Just (Set.singleton v)
-       _ -> Nothing
- ||| tryQuery @Lang (\rec -> \case
-      -- But when we bind a variable, delete it from the uses
-      MonadBind {bindVar, bindExpr, bindBody} -> Just (rec bindExpr <> Set.delete bindVar (rec bindBody))
-       _ -> Nothing)
- ||| tryQuery @OpLang (\rec -> \case
-       Let {letPattern, letExpr, letBody} -> Just (rec letExpr <> (rec letBody Set.\\ boundVars letPattern))
-       _ -> Nothing)
-     -- if no other branch matches, recurse into all sub-terms and add them up
- ||| recurse
- )
-```
-
-By abstracting over an applicative, queries are just a special kind of transform with a MonadWriter constraint. We can compose transformations just as easily (if they are not type-changing).
-We can also use top-down recursion, bottom up recursion, or even ad-hoc mixed paths:
 
 ```Haskell
 bottomUp :: Trans m
@@ -76,12 +54,33 @@ bottomUp =
               Plus y (Lit 0) -> Just y
               _ -> Nothing
       ||| tryTrans_ @Lang \case
-              Union Empty a -> Just a
-              Union a Empty -> Just a
+              Alt Empty a -> Just a
+              Alt a Empty -> Just a
               _ -> Nothing
    )
 ```
 
+Because we recurse first this is a bottom-up transformation: We transform the sub-expressions first before applying these rules.
+By abstracting over an applicative, queries are just a special kind of transform with a MonadWriter constraint. 
+By using the `self` pointer explicitely we can even add ad-hoc changes the recursion order:
+
+
+```haskell
+-- | Collect all references which are used but not bound in the code block
+freeVarsQ :: Data a => a -> Set.Set Var
+freeVarsQ = runQ
+ (   tryQuery_ @Expr \case
+       -- a variable use counts
+       Ref v -> Just (Set.singleton v)
+       _ -> Nothing
+ ||| tryQuery @Lang (\rec -> \case
+      -- But when we bind a variable, delete it from the uses
+      Let {bindVar, bindExpr, bindBody} -> Just (rec bindExpr <> Set.delete bindVar (rec bindBody))
+       _ -> Nothing)
+     -- if no other branch matches, recurse into all sub-terms and add them up
+ ||| recurse
+ )
+```
 
 ### Typing the Data.Data
 
@@ -245,4 +244,4 @@ If anyone has ideas for the success tracking, or better inlining, I'm all ears! 
 Thanks for reading!
 
 
-[^1]: If you don't like the title, feel free to use "Being Trans is super" instead
+[^1]: Who would have thought that a blog post about `self`, `super`, and `Trans` would be so hard to title 🤔
