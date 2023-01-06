@@ -244,4 +244,4 @@ If anyone has ideas for the success tracking, or better inlining, I'm all ears! 
 Thanks for reading!
 
 
-[^1]: Who would have thought that a blog post about `self`, `super`, and `Trans` would be so hard to title 🤔
+[^1]: Who would have thought that a blog post about `self`, `super`, and `Trans` would be so hard to title
