@@ -240,7 +240,7 @@ However, I have not done much benchmarking. The HitTest optimization seems to he
 - `recurse` should only count as a success if the result differs from the original value. Some monad transformer should handle this, but I have not found a nice way to make this composable with user monads yet
 - The `HitTest` implementation can break if users call the function at new types. Given `tryQuery @[Int] (\rec ls -> rec (head ls, last ls))`, the recursive call at `(Int, Int)` may be unknown. I changed the implementation to always visit unknown types, but could we do something smarter?
 
-If anyone has ideas I'm all ears! There is a reason fast OOP languages tend to run with a JIT compiler - specializing the indirect calls away could make this as fast as hand-written code.  The [Optimizing generics is easy!](https://dl.acm.org/doi/abs/10.1145/1706356.1706366) paper may have some applicable wisdom to share. If the API gets polished a bit further this could be a library instead of a neat design pattern.
+If anyone has ideas I'm all ears! There is a reason fast OOP languages tend to run with a JIT compiler - specializing the indirect calls away could make this as fast as hand-written code.  The [Optimizing SYB is easy!](https://ku-fpg.github.io/papers/Adams-15-OSTIE/) paper may work, though I would be very surprised if Hermit (the GHC transformation DSL it was written in) still builds cleanly.
 
 Thanks for reading!
 
