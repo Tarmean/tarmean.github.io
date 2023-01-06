@@ -62,7 +62,7 @@ bottomUp =
 
 Because we recurse first this is a bottom-up transformation: We transform the sub-expressions first before applying these rules.
 By abstracting over an applicative, queries are just a special kind of transform with a MonadWriter constraint. 
-By using the `self` pointer explicitely we can even add ad-hoc changes the recursion order:
+By using the `this` pointer explicitely we can even add ad-hoc changes the recursion order:
 
 
 ```haskell
@@ -119,7 +119,7 @@ instance Data Lang where
            -> m Lang
     gfoldl k z (Bind a b c) = z Bind `k` a `k` b `k` c
     gfoldl k z (If a b c) = z If `k` a `k` b `k` c
-    ...
+    ...****
 ```
 
 ## Implementation
