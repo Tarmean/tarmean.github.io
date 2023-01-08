@@ -2,13 +2,14 @@
 
 Inheritance is an infamously overloaded concept, with use-cases ranging over templating, ad-hoc polymorphism, code organization, method overriding, and even code reuse. Let us add a new one: Composable AST rewrites and queries.
 
-The code can be found [in this gist](https://gist.github.com/Tarmean/c8c986f6c1723be10b7454b53288e989). I have some minor open design questions so it hasn't made it into a library yet.
+The code can be found [in this gist](https://gist.github.com/Tarmean/c8c986f6c1723be10b7454b53288e989). I have some minor open design questions so it hasn't quite made it into a library yet.
+
+### Open Recursion and V-Tables
 
 OOP languages support open recursion, by which I mean the `super` and `this`/`self` references. Instead of calling static methods, objects carry vtables which contain function pointers. In most languages `super` links a vtable to the parent-class vtable, forming a linked list. Meanwhile `this` always points to the top-most vtable of the object:
 
 ![A linked list of vtables](./InheritanceLinkedList.svg)
 
-This vtable pattern is all we will take from inheritance. Sorry about the misleading title[^1].
 
 Haskell can do vtables: We could pass around records of functions, or make GHC do the legwork by using type-classes. In fact, this is how GHC implements type-classes before optimizing them:
 
@@ -41,7 +42,7 @@ Records of functions tend to be slower, but they are easy to work with.
 
 Another probem is that open recursion is famously hard to reason about. To manage, we will restrict ourselves to a very limited form: We build a recursive function containing a case statement. The `super` pointers form a chain of possible cases, and `this` is the recursive call. 
 
-This allows us to write queries and transformations over mutually recursive types with minimal boilerplate:
+This allows us to write queries and transformations over mutually recursive types, while only requiring a `deriving Data` on each type:
 
 ```Haskell
 bottomUp :: Trans m
@@ -52,17 +53,16 @@ bottomUp =
                 | y == x -> Just (Lit 0)
               Plus (Lit 0) y -> Just y
               Plus y (Lit 0) -> Just y
+              Plus (Lit a) (Lit b) -> Just (Lit (a + b))
               _ -> Nothing
       ||| tryTrans_ @Lang \case
-              Alt Empty a -> Just a
-              Alt a Empty -> Just a
+              If (Lit i) a b -> Just (if i == 0 then b else a)
               _ -> Nothing
    )
 ```
 
-We recurse first, so this is a bottom-up transformation: We transform all sub-expressions before applying the rules.
-By abstracting over an applicative, queries are just a special kind of transform with a MonadWriter constraint. 
-By using the `this` pointer explicitely we can even add ad-hoc changes the recursion order:
+We `recurse` first, so this is a bottom-up transformation: When we apply the rules, all sub-expressions are already transformed.
+By abstracting over an applicative, queries are just a special kind of transform with a MonadWriter constraint:
 
 
 ```haskell
@@ -81,6 +81,8 @@ freeVarsQ = runQ
  ||| recurse
  )
 ```
+
+This query is similar to a recursion-schemes fold, where we flatten all child-terms and give an algebra `F a -> a`. But by having a first-class function we can also loop a transformation until the result stops changing, or use ad-hoc traversal orders.
 
 ### Typing the Data.Data
 
@@ -102,13 +104,13 @@ gmapM :: forall m a. (Data a, Applicative m) => (forall d. Data d => d -> m d) -
 gmapM visitChild = gfoldl k pure
   where
     k :: Data d => m (d -> b) -> d -> m b
-    k c x = c <*> visitChild x
+    reconstruct `k` focusedField = reconstruct <*> visitChild focusedField
 ```
 
 
 Data.Typeable is quite magic and automatically derived by GHC for all types. We do not even get the opportunity for hand-written instances! For Data.Data we require a `-XDeriveDataTypeable` extension and an explicit `deriving Data`. There are good reasons to write these instances manually: For GADTs we usually have to. But even for normal types we may want to ban some constructors from being generated, or some fields from getting visited.
 
-The `gfoldl` implementation has quite a confusing type signature. The idea is that we use a `z` function to wrap the constructor, and repeatedly apply a `k` function to add each argument.
+The `gfoldl` implementation has quite a confusing type signature. The idea is that we use a `z` function to wrap the constructor, and repeatedly apply a `k` function to visit each argument.
 The `k` function can use the Data constraint to recurse further, and use the Typeable super-class to branch on the current type.
 
 ```Haskell
@@ -130,7 +132,7 @@ Data.Data makes it easy to throw all transformations into one simple shape:
 type Trans1 m = forall x. Data x => x -> m x
 
 tryTrans1 :: forall a m. (Typeable a, Monad m) => (a -> m a) -> Trans1 m
-tryTrans1 f (x:: tx) = case eqT @a @tx of
+tryTrans1 f (x :: tx) = case eqT @a @tx of
    Just Refl -> f x -- apply the transformation
    Nothing -> pure x -- keep the old value here
 ```
@@ -244,5 +246,3 @@ If anyone has ideas I'm all ears! There is a reason fast OOP languages tend to r
 
 Thanks for reading!
 
-
-[^1]: Who would have thought that a blog post about `self`, `super`, and `Trans` would be so hard to title
