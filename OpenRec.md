@@ -1,45 +1,9 @@
-# Haskell can have a little Inheritance as a Treat
+# Scrap your boilerplate, with recursive continuations[^1]
 
 
-The core trick I want to introduce is simple: Adding some knot-tying to continuations lets us add a `recurse` operator which is really useful when writing generic traversals. Weirdly, this pattern closely mirrors the v-tables which implement OOP inheritance.  
+The core trick I want to introduce is simple: Adding some knot-tying to continuations lets us add a `recurse` operator which is really useful when writing generic traversals. Weirdly the resulting continuation passing style closely mirrors the v-tables which implement OOP inheritance. 
 This blog post focuses on concrete implementation based on `scrap your boilerplate`, though it would work for `KURE` or `GHC.Generics` based traversals. The code for this post can be found [in this gist](https://gist.github.com/Tarmean/c8c986f6c1723be10b7454b53288e989). I have some minor open design questions so it hasn't *quite* made it into a library yet.
 
-### Open Recursion and V-Tables
-
-OOP languages support open recursion, by which I mean the `super` and `this`/`self` references. Instead of calling static methods, objects carry vtables which contain function pointers. In most languages `super` links a vtable to the parent-class vtable, forming a linked list. Meanwhile `this` always points to the top-most vtable of the object:
-
-| ![A linked list of vtables](./InheritanceLinkedList.svg) | 
-|:--:| 
-| *Every OOP example has to answer one important question: Cars or animals?* |
-
-Here is some example code to show what I mean:
-
-```Java
-class Cat extends Animal {
-    public  String test() {
-        return super.this_introduce();
-    }
-    public String introduce() {
-        return "Cat";
-    }
-}
-class Animal {
-    public String introduce() {
-        return "Animal";
-    }
-    public String this_introduce() {
-        return this.introduce();
-    }
-}
-
->>> Cat cat = new Cat();
->>> cat.test();
-"Cat"
-```
-
-Here, `Cat::test` calls `Animal::this_introduce`. Perhaps surprisingly, `Animal::this_introduce` calls `Cat::introduce` because `this` always points to the top-level vtable.
-
-Similarly, we will write our scrap-your-boilerplate code with a top-level `this` continuation for composable recursive calls. 
 
 ###  Doing it in haskell
 
@@ -261,3 +225,5 @@ Also, there is a reason fast OOP languages tend to run with a JIT compiler - spe
 
 Thanks for reading!
 
+
+[1]: I cut out a section about OOP vtables because it wasn't terribly relevant to SYB and made people think this was an OOP blog post.  
