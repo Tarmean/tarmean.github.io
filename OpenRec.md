@@ -29,8 +29,6 @@ bottomUp =
      (   tryTrans_ @Expr \case
               Minus x y
                 | y == x -> Just (Lit 0)
-              Plus (Lit 0) y -> Just y
-              Plus y (Lit 0) -> Just y
               Plus (Lit a) (Lit b) -> Just (Lit (a + b))
               _ -> Nothing
       ||| tryTrans_ @Lang \case
