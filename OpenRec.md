@@ -35,13 +35,38 @@ bottomUp =
    )
 ```
 
-Here, we `recurse` first. This means we do a bottom-up transformation: When we apply the rules, all sub-expressions are already transformed.
+We `recurse` first. This means we do a bottom-up transformation: When we apply the rules, all sub-expressions are already transformed.
+
+We can apply this transformation like so:
+
+```Haskell
+data Expr = Plus Expr Expr | Minus Expr Expr | Lit Int | Ref Var
+   deriving (Eq, Ord, Show, Data)
+ 
+type Var = String
+data Lang = Let { var :: Var, expr :: Expr, body :: Expr } | If Expr Lang Lang
+   deriving (Eq, Ord, Show, Data)
+   
+test :: Lang
+test = If (Plus (Lit 1) (Minus (Ref "x") (Ref x))) (Lit 2) (Lit 3)
+
+>>> run bottomUp test
+Lit 2
+```
+
+We will transform `Minus (Ref "x") (Ref "x")` into `Lit 0`, then `Plus (Lit 1) (Lit 0)` into `Lit 1`, and finally the entire if-statement into `Lit 2`.
+
+Note that the transformation didn't cover all constructors. The default base-case is the identity transform, and `recurse` automatically targets all child-expressions
+.
+Here, the datatypes are fairly small so a manual implementation would be easy. Even small real languages are much larger, though, and GHC's typechecking AST has over a hundred of constructors! No wonder Haskell has so many approaches to generic programming.
+
+
 By abstracting over an applicative, queries are just a special kind of transform with a MonadWriter constraint:
 
 
 ```haskell
 -- | Collect all references which are used but not bound in the code block
-freeVarsQ :: (MonadWriter (S.Set Var) m) => Trans m
+freeVarsQ :: (MonadWriter (Set.Set Var) m) => Trans m
 freeVarsQ =
      tryQuery_ @Expr \case
        -- when we reference a variable, it's used
@@ -53,16 +78,25 @@ freeVarsQ =
        _ -> Nothing)
      -- if no other branch matches, recurse into all sub-terms and add them up
  ||| recurse
+ 
+ 
+ >>> runQ freeVarsQ test
+ S.fromList [Var "x"]
 ```
 
-This query is similar to a recursion-schemes fold, where we flatten child-terms using an algebra `f a -> a`. But we have some advantages:
+### Why
 
-- By having a first-class function we can perform ad-hoc traversal orders, such as looping a transformation until the result stops changing
-- We can work with mutually recursive types. Alternatively, we could build a datatypes-ala-carte sum with `data (:+:) f g a = L (f a) | R (g a)`, and visit all `ExprF :+: LangF` "contained" in a `Lang` value. But this requires boilerplate instances for each combination of visited types.
+So we'll write composable tranformations. How is this approach different from existing approaches such as  scrap-your-boilerplate?  
+There are three big points:
 
-### Typing the Data.Data
+- Building transformations using (non-monadic) combinators lets us keep track of which types we can transform, and skip sub-expressions we cannot not modify. With SYB, our simple traversals would visit each character contained in the variable names even though no case can match a `Char`. Using an optimization from the lens library this often gives astonishing wins over base SYB, in the order of 10-100x speedups.
+- Existing frameworks  add recursion using big combinators such as `bottomup :: Trans a -> Trans a` which recursively apply the transformation to each child. The CPS approach is much more expressive, and lets us encode arbitrary traversal orders
+- Open recursion lets us add decorators, such as logging or tracking the bindings of in-scope variables. We write the decorators once and compose them with `decorator >>> _`.
 
-To implement this API, we will use the `Data.Data` approach to generic programming. The type signatures can be a bit confusing and we are just going to bull through them. [See here](https://chrisdone.com/posts/data-typeable/) for a full-fledged introduction. Data.Data is also notoriously slow, but we will borrow a neat optimization from the `lens` library. 
+
+### How?
+
+To implement this API, we will use the `scrap your boilerplate` approach to generic programming. The type signaturess can be a bit confusing and we are not going to go in-depth. [See here](https://chrisdone.com/posts/data-typeable/) for a full-fledged introduction. Data.Data is also notoriously slow, but we will borrow a neat optimization from the `lens` library. 
 
 The `scrap your boilerplate` approach is based on two key pieces:
 
@@ -116,9 +150,6 @@ tryTrans1 f (x :: tx) = case eqT @a @tx of
 ```
 
 But it's not really composable yet. We need vtables! 
-
-### A linked list of VTables
-
 For transformations, we often want to distinguish between success and failure branches so we add two distinct continuations, similar to a search monad.
 
 ```Haskell
