@@ -21,7 +21,12 @@ data Lang
    deriving (Eq, Ord, Show, Data)
    
 test :: Lang
-test = If (Plus (Lit 1) (Minus (Ref "x") (Ref "x"))) (Return (Ref "a")) (Return (Ref "b"))
+test 
+  = If 
+    (Plus (Lit 1) 
+          (Minus (Ref "x") (Ref "x"))) 
+    (Return (Ref "a"))
+    (Return (Ref "b"))
 
 bottomUp :: Trans m
 bottomUp =
