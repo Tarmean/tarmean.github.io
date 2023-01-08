@@ -9,6 +9,7 @@ The code can be found [in this gist](https://gist.github.com/Tarmean/c8c986f6c17
 OOP languages support open recursion, by which I mean the `super` and `this`/`self` references. Instead of calling static methods, objects carry vtables which contain function pointers. In most languages `super` links a vtable to the parent-class vtable, forming a linked list. Meanwhile `this` always points to the top-most vtable of the object:
 
 ![A linked list of vtables](./InheritanceLinkedList.svg)
+
 *Every OOP example has to answer one important question: Cars or animals?*
 
 Haskell can do vtables: We could pass around records of functions, or make GHC do the legwork by using type-classes. In fact, this is how GHC implements type-classes before optimizing them:
