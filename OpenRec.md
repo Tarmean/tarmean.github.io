@@ -21,7 +21,7 @@ data Lang
    deriving (Eq, Ord, Show, Data)
    
 test :: Lang
-test = If (Plus (Lit 1) (Minus (Ref "x") (Ref "x"))) (Ref "a") (Ref "b")
+test = If (Plus (Lit 1) (Minus (Ref "x") (Ref "x"))) (Return (Ref "a")) (Return (Ref "b"))
 
 bottomUp :: Trans m
 bottomUp =
@@ -37,9 +37,9 @@ bottomUp =
    )
    
 >>> run bottomUp test
-Ref "a"
+Return (Ref "a")
 ```
-We will transform `Minus (Ref "x") (Ref "x")` into `Lit 0`, then `Plus (Lit 1) (Lit 0)` into `Lit 1`, and finally the entire if-statement into `Ref "a"`.
+We will transform `Minus (Ref "x") (Ref "x")` into `Lit 0`, then `Plus (Lit 1) (Lit 0)` into `Lit 1`, and finally the entire if-statement into `Return (Ref "a")`.
 Note that the transformation didn't cover all constructors. The default base-case is the identity transform, and `recurse` automatically targets all sub-fields
 
 
