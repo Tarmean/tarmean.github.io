@@ -1,4 +1,4 @@
-# Haskell can have a little Inheritance, as a treat
+# Haskell can have a little Inheritance as a Treat
 
 Inheritance is an infamously overloaded concept, with use-cases ranging over templating, ad-hoc polymorphism, code organization, method overriding, and even code reuse. Let us add a new one: Composable AST rewrites and queries.
 
