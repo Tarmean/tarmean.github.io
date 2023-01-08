@@ -97,7 +97,7 @@ This query is similar to a recursion-schemes fold, where we flatten child-terms 
 
 ### Typing the Data.Data
 
-To implement this API, we will use the `Data.Data` approach to generic programming. The type signatures can be a bit confusing and we are just going to bull through them. [See here](https://chrisdone.com/posts/data-typeable/) for a full-fledged introduction. Data.Data is also notoriously slow, but we will borrow a neat optimization from the `lens`. 
+To implement this API, we will use the `Data.Data` approach to generic programming. The type signatures can be a bit confusing and we are just going to bull through them. [See here](https://chrisdone.com/posts/data-typeable/) for a full-fledged introduction. Data.Data is also notoriously slow, but we will borrow a neat optimization from the `lens` library. 
 
 The `scrap your boilerplate` approach is based on two key pieces:
 
@@ -117,7 +117,7 @@ gmapM :: forall m a. (Data a, Applicative m) => (forall d. Data d => d -> m d) -
 gmapM visitChild = gfoldl k pure
   where
     k :: Data d => m (d -> b) -> d -> m b
-    reconstruct `k` focusedField = reconstruct <*> visitChild focusedField
+    k holeWithoutField focusedField = holeWithoutField <*> visitChild focusedField
 ```
 
 
