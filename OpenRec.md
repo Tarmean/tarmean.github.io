@@ -84,7 +84,7 @@ freeVarsQ =
        _ -> Nothing
  ||| tryQuery @Lang (\rec -> \case
       -- But we sholdn't count locals
-      Let {boundVar, expr, body} -> Just (rec expr <> Set.delete var (rec body))
+      Let {var, expr, body} -> Just (rec expr <> Set.delete var (rec body))
        _ -> Nothing)
      -- if no other branch matches, recurse into all sub-terms and add them up
  ||| recurse
