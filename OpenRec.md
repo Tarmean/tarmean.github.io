@@ -168,7 +168,7 @@ data Ctx m = Ctx {
   }
 ```
 
-A transformation now looks like `Ctx m -> Trans1 m`. As an optimization we also track some meta-data such as relevant types, so we can skip sub-types which are irrelevant to our transformation. I brazenly stole this trick from the lens library and only changed a couple line so that it works for multiple target types.
+A transformation now looks like `Ctx m -> Trans1 m`. Typically, CPS in Haskell is curried. But `Trans1 m -> Trans1 m -> Trans1 m -> Trans1 m` makes compiler errors a living nightmare, so lets not go there. As an optimization we will also track some meta-data such as relevant types, so we can skip any sub-expressions whose types remain untouched by the transformation. I brazenly stole the idea and implementation from the lens library, only changing a couple line so that it works for multiple target types.
 
 ```Haskell
 data Trans m = T {
