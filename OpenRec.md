@@ -70,11 +70,11 @@ By abstracting over an applicative, queries are just a special kind of transform
 freeVarsQ :: Data a => a -> Set.Set Var
 freeVarsQ = runQ
  (   tryQuery_ @Expr \case
-       -- a variable use counts
+       -- referencing variable is a use
        Ref v -> Just (Set.singleton v)
        _ -> Nothing
  ||| tryQuery @Lang (\rec -> \case
-      -- But when we bind a variable, delete it from the uses
+      -- But a bound variable it is not free
       Let {bindVar, bindExpr, bindBody} -> Just (rec bindExpr <> Set.delete bindVar (rec bindBody))
        _ -> Nothing)
      -- if no other branch matches, recurse into all sub-terms and add them up
@@ -82,7 +82,10 @@ freeVarsQ = runQ
  )
 ```
 
-This query is similar to a recursion-schemes fold, where we flatten all child-terms and give an algebra `F a -> a`. But by having a first-class function we can also loop a transformation until the result stops changing, or use ad-hoc traversal orders.
+This query is similar to a recursion-schemes fold, where we flatten all child-terms using an algebra `(ExprF :+: LangF) a -> a`. But we have some advantages:
+
+- By having a first-class function we can perform ad-hoc traversal orders, such as looping a transformation until the result stops changing
+- We can work with mutually recursive types. We can throw all types into a sum as in datatypes ala carte, using `data (:+:) f g a = L (f a) | R (g a)`, but the transformation usually has to be hand-written.
 
 ### Typing the Data.Data
 
