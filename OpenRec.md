@@ -2,7 +2,7 @@
 
 
 The core trick I want to introduce is simple: Adding some knot-tying to continuations lets us add a `recurse` operator which is really useful when writing generic traversals. Weirdly, this pattern exactly matches OOP inheritance v-tables.  
-This blog post focuses on concrete code. The good news is that the code can be used as-is, you can find it [in this gist](https://gist.github.com/Tarmean/c8c986f6c1723be10b7454b53288e989). I have some minor open design questions so it hasn't *quite* made it into a library yet.
+This blog post focuses on concrete implementation based on `scrap your boilerplate`, though it would work for `KURE` or `GHC.Generics` based traversals. The code for this post can be found [in this gist](https://gist.github.com/Tarmean/c8c986f6c1723be10b7454b53288e989). I have some minor open design questions so it hasn't *quite* made it into a library yet.
 
 ### Open Recursion and V-Tables
 
@@ -12,40 +12,46 @@ OOP languages support open recursion, by which I mean the `super` and `this`/`se
 |:--:| 
 | *Every OOP example has to answer one important question: Cars or animals?* |
 
+Here is some example code to show what I mean:
 
-
-Haskell can do vtables: We could pass around records of functions, or make GHC do the legwork by using type-classes. In fact, this is how GHC implements type-classes before optimizing them:
-
-```Haskell
-class Eq a => Ord a where
-    compare :: a -> a -> Ordering
-    (<) :: a -> a -> Bool
-    ...
-    
-lessThan3 :: Ord Int => Int -> Bool
-lessThan3 = (<3)
-
--- roughly translates to
-data EqDict a = EqDict { (==) :: a -> a -> Bool }
-data OrdDict a {
-   superEq :: EqDict a,
-   compare :: a -> a -> Ordering,
-   (<) :: a -> a -> Ordering,
-   ...
+```Java
+class Cat extends Animal {
+    public  String test() {
+        return super.this_introduce();
+    }
+    public String introduce() {
+        return "Cat";
+    }
+}
+class Animal {
+    public String introduce() {
+        return "Animal";
+    }
+    public String this_introduce() {
+        return this.introduce();
+    }
 }
 
--- Here, `<` is a record selector which grabs the function from the `$dOrd` struct
-lessThan3 :: OrdDict Int -> Int -> Bool
-lessThan3 = \ $dOrd e -> (<) $dOrd e 3
+>>> Cat cat = new Cat();
+>>> cat.test();
+"Cat"
 ```
 
-Typeclasses are great because GHC optimizes them *hard*. Given enough INLINABLE pragmas it can replace most vtables with explicit calls. Additionally, the constraint solving executes a prolog-like logic program and can perform powerful code synthesis.  
-But type-classes are hard to compose: They are fundamentally type driven, so we must transform the `super` and `this` pointers into unique types and parametrize all code over them. This optimizes well, but is really boilerplate heavy. Transformer stacks are bad enough to look at and we would need two stacks. Additionally, GHC occasionally hangs if we go overboard with cyclic typeclass dependencies when the constraint solver fails to memoize the cycles away.
-Records of functions tend to be slower, but they are easy to work with.
+Here, `Cat::test` calls `Animal::this_introduce`. Perhaps surprisingly, `Animal::this_introduce` calls `Cat::introduce` because `this` always points to the top-level vtable.
 
-Another probem is that open recursion is famously hard to reason about. To manage, we will restrict ourselves to a very limited form: We build a recursive function containing a case statement. The `super` pointers form a chain of possible cases, and `this` is the recursive call. 
+Similarly, we will write our scrap-your-boilerplate code with a top-level `this` continuation for composable recursive calls. 
 
-This allows us to write queries and transformations over mutually recursive types, while only requiring a `deriving Data` on each type:
+###  Doing it in haskell
+
+Haskell can do vtables: We could pass around records of functions, or make GHC do the legwork by using type-classes. At a surface level these require very different styles:
+
+- Records of functions are just functions which we can manipulate directly
+- Type classes translate into records of functions, but are specified as types. This is why monad-transformer require stacks like `StateT s (WriterT r [])`, we indirectly instruct GHC to compose type-class instances
+
+Type-classes optimize better, but would require a lot of type-level programming to be as expressive. We will just use functions.
+
+
+Our end goal is to write queries and transformations over mutually recursive types, while only requiring a `deriving Data` on each type:
 
 ```Haskell
 bottomUp :: Trans m
@@ -64,15 +70,15 @@ bottomUp =
    )
 ```
 
-We `recurse` first, so this is a bottom-up transformation: When we apply the rules, all sub-expressions are already transformed.
+Here, we `recurse` first. This means we do a bottom-up transformation: When we apply the rules, all sub-expressions are already transformed.
 By abstracting over an applicative, queries are just a special kind of transform with a MonadWriter constraint:
 
 
 ```haskell
 -- | Collect all references which are used but not bound in the code block
-freeVarsQ :: Data a => a -> Set.Set Var
-freeVarsQ = runQ
- (   tryQuery_ @Expr \case
+freeVarsQ :: (Data a, MonadWriter (S.Set Var) m) => Trans m
+freeVarsQ =
+     tryQuery_ @Expr \case
        -- referencing variable is a use
        Ref v -> Just (Set.singleton v)
        _ -> Nothing
@@ -82,17 +88,18 @@ freeVarsQ = runQ
        _ -> Nothing)
      -- if no other branch matches, recurse into all sub-terms and add them up
  ||| recurse
- )
 ```
 
-This query is similar to a recursion-schemes fold, where we flatten all child-terms using an algebra `(ExprF :+: LangF) a -> a`. But we have some advantages:
+This query is similar to a recursion-schemes fold, where we flatten child-terms using an algebra `f a -> a`. But we have some advantages:
 
 - By having a first-class function we can perform ad-hoc traversal orders, such as looping a transformation until the result stops changing
 - We can work with mutually recursive types. Recursion-schemes can throw all types into a big sum as in datatypes ala carte, using `data (:+:) f g a = L (f a) | R (g a)`. But the transformation probably has to be hand-written for each combination of targeted types.
 
 ### Typing the Data.Data
 
-To implement this API, we will use the `Data.Data` approach to generic programming. It is notoriously slow, but we will add some optimizations. It is based on two key pieces:
+To implement this API, we will use the `Data.Data` approach to generic programming. The type signatures can be a bit confusing and we are just going to bull through them. [See here](https://chrisdone.com/posts/data-typeable/) for a full-fledged introduction. Data.Data is also notoriously slow, but we will borrow a neat optimization from the `lens`. 
+
+The `scrap your boilerplate` approach is based on two key pieces:
 
 - Data.Typeable constructs a unique `TypeRep` value for each type. We can use it to print types, compare types, and perform runtime casts
 - Data.Data allows us to fold and unfold types generically
