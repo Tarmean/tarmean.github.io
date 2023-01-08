@@ -1,9 +1,8 @@
 # Haskell can have a little Inheritance as a Treat
 
-Inheritance is an infamously overloaded concept, with use-cases ranging over templating, ad-hoc polymorphism, code organization, method overriding, and even code reuse. Let us add a new one: Composable AST rewrites and queries. 
 
-The core trick I want to introduce is simple: Adding some knot-tying to continuations lets us add a `recurse` operator which is really useful when writing generic traversals.  
-But I will be focusing on concrete code which can be used as-is, you can find it [in this gist](https://gist.github.com/Tarmean/c8c986f6c1723be10b7454b53288e989). I have some minor open design questions so it hasn't *quite* made it into a library yet.
+The core trick I want to introduce is simple: Adding some knot-tying to continuations lets us add a `recurse` operator which is really useful when writing generic traversals. Weirdly, this pattern exactly matches OOP inheritance v-tables.  
+This blog post focuses on concrete code. The good news is that the code can be used as-is, you can find it [in this gist](https://gist.github.com/Tarmean/c8c986f6c1723be10b7454b53288e989). I have some minor open design questions so it hasn't *quite* made it into a library yet.
 
 ### Open Recursion and V-Tables
 
@@ -249,7 +248,9 @@ However, I have not done much benchmarking. The HitTest optimization seems to he
 - `recurse` should only count as a success if the result differs from the original value. Some monad transformer should handle this, but I have not found a nice way to make this composable with user monads yet
 - The `HitTest` implementation can break if users call the function at new types. Given `tryQuery @[Int] (\rec ls -> rec (head ls, last ls))`, the recursive call at `(Int, Int)` may be unknown. I changed the implementation to always visit unknown types, but could we do something smarter?
 
-If anyone has ideas I'm all ears! There is a reason fast OOP languages tend to run with a JIT compiler - specializing the indirect calls away could make this as fast as hand-written code.  The [Optimizing SYB is easy!](https://ku-fpg.github.io/papers/Adams-15-OSTIE/) paper may work, though I would be very surprised if Hermit (the GHC transformation DSL it was written in) still builds cleanly.
+If anyone has ideas, or has experience with similar patterns, I'm all ears! 
+
+Also, there is a reason fast OOP languages tend to run with a JIT compiler - specializing the indirect calls away could make this as fast as hand-written code. The [Optimizing SYB is easy!](https://ku-fpg.github.io/papers/Adams-15-OSTIE/) paper may work, though last I checked Hermit (the GHC transformation DSL it was written in) was stuck at the GHC 7.4 API.
 
 Thanks for reading!
 
