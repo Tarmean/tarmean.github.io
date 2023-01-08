@@ -5,9 +5,10 @@ The core trick I want to introduce is simple: Adding some knot-tying to continua
 This blog post focuses on concrete implementation based on `scrap your boilerplate`, though it would work for `KURE` or `GHC.Generics` based traversals. The code for this post can be found [in this gist](https://gist.github.com/Tarmean/c8c986f6c1723be10b7454b53288e989). I have some minor open design questions so it hasn't *quite* made it into a library yet.
 
 
-###  Doing it in haskell
+###  Open Recursion in Haskell
 
-Haskell can do vtables: We could pass around records of functions, or make GHC do the legwork by using type-classes. At a surface level these require very different styles:
+The classic approach to abstract over an implementation is vtables, aka records of functions.
+Haskell can do vtables: We could literally pass around records of functions, or make GHC do the legwork by using type-classes. At a surface level these require very different styles:
 
 - Records of functions are just functions which we can manipulate directly
 - Type classes translate into records of functions, but are specified as types. This is why monad-transformer require stacks like `StateT s (WriterT r [])`, we indirectly instruct GHC to compose type-class instances
