@@ -77,7 +77,7 @@ freeVarsQ = runQ
        Ref v -> Just (Set.singleton v)
        _ -> Nothing
  ||| tryQuery @Lang (\rec -> \case
-      -- But a bound variable it is not free
+      -- But a bound variable is not free
       Let {bindVar, bindExpr, bindBody} -> Just (rec bindExpr <> Set.delete bindVar (rec bindBody))
        _ -> Nothing)
      -- if no other branch matches, recurse into all sub-terms and add them up
