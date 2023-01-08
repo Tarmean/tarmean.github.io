@@ -88,7 +88,7 @@ freeVarsQ = runQ
 This query is similar to a recursion-schemes fold, where we flatten all child-terms using an algebra `(ExprF :+: LangF) a -> a`. But we have some advantages:
 
 - By having a first-class function we can perform ad-hoc traversal orders, such as looping a transformation until the result stops changing
-- We can work with mutually recursive types. We can throw all types into a sum as in datatypes ala carte, using `data (:+:) f g a = L (f a) | R (g a)`, but the transformation usually has to be hand-written.
+- We can work with mutually recursive types. Recursion-schemes can throw all types into a big sum as in datatypes ala carte, using `data (:+:) f g a = L (f a) | R (g a)`. But the transformation probably has to be hand-written for each combination of targeted types.
 
 ### Typing the Data.Data
 
