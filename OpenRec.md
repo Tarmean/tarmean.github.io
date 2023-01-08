@@ -1,8 +1,9 @@
 # Haskell can have a little Inheritance as a Treat
 
-Inheritance is an infamously overloaded concept, with use-cases ranging over templating, ad-hoc polymorphism, code organization, method overriding, and even code reuse. Let us add a new one: Composable AST rewrites and queries.
+Inheritance is an infamously overloaded concept, with use-cases ranging over templating, ad-hoc polymorphism, code organization, method overriding, and even code reuse. Let us add a new one: Composable AST rewrites and queries. 
 
-The code can be found [in this gist](https://gist.github.com/Tarmean/c8c986f6c1723be10b7454b53288e989). I have some minor open design questions so it hasn't quite made it into a library yet.
+The core trick I want to introduce is simple: Adding some knot-tying to continuations lets us add a `recurse` operator which is really useful when writing generic traversals.  
+But I will be focusing on concrete code which can be used as-is, you can find it [in this gist](https://gist.github.com/Tarmean/c8c986f6c1723be10b7454b53288e989). I have some minor open design questions so it hasn't *quite* made it into a library yet.
 
 ### Open Recursion and V-Tables
 
