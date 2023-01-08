@@ -76,7 +76,7 @@ By abstracting over an applicative, queries are just a special kind of transform
 
 ```haskell
 -- | Collect all references which are used but not bound in the code block
-freeVarsQ :: (Data a, MonadWriter (S.Set Var) m) => Trans m
+freeVarsQ :: (MonadWriter (S.Set Var) m) => Trans m
 freeVarsQ =
      tryQuery_ @Expr \case
        -- referencing variable is a use
