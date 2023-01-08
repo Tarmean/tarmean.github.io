@@ -1,4 +1,4 @@
-# Scrap your boilerplate, with recursive continuations[^1]
+# Scrap your boilerplate, with recursive continuations [^1]
 
 
 The core trick I want to introduce is simple: Adding some knot-tying to continuations lets us add a `recurse` operator which is really useful when writing generic traversals. Weirdly the resulting continuation passing style closely mirrors the v-tables which implement OOP inheritance. 
