@@ -148,7 +148,7 @@ The classic approach to abstract over some implementation is vtables, aka record
 Haskell can do vtables: We could literally pass around records of functions, or make GHC do the legwork by using type-classes. At a surface level these require very different styles:
 
 - Records of functions are just functions which we can manipulate directly
-- Type classes translate into records of functions, but are specified as types. This is why monad-transformer require stacks like `StateT s (WriterT r [])`, we indirectly instruct GHC to compose type-class instances
+- Type classes translate into records of functions, but are specified as types. This is why `transformers` uses types like `StateT s (WriterT r [])`, we indirectly instruct GHC to compose type-class instances
 
 Type-classes optimize better, but would require a lot of type-level programming to be as expressive. We will just use functions, ending up with a slightly weird continuation-passing-style. 
 
