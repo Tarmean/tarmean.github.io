@@ -61,13 +61,13 @@ freeVarsQ =
       -- But we sholdn't count locals
       Let {var, expr, body} -> Just (rec expr <> Set.delete var (rec body))
        _ -> Nothing)
-     -- if no other branch matches, recurse into all sub-terms and add them up
  ||| recurse
  
  
  >>> runQ freeVarsQ test
  S.fromList [Ref "x", Ref "a", Ref "b"]
 ```
+Again we only mention the constructors which matter. Because we use generic programming, `runQ freeVarsQ :: Data a => a -> S.Set Var` works on any type implementing `Data`. This makes it easy extend types, add extra data such as source locations, or transform collections.
 
 ### Why
 
