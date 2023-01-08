@@ -1,5 +1,5 @@
-# Scrap your boilerplate, with recursive continuations 
-[^1]
+# Scrap your boilerplate, with recursive continuations [^1]
+
 
 The core trick I want to introduce is simple: Adding some knot-tying to continuations lets us add a `recurse` operator which is really useful when writing generic traversals. Weirdly the resulting continuation passing style closely mirrors the v-tables which implement OOP inheritance. 
 This blog post focuses on concrete implementation based on `scrap your boilerplate`, though it would work for `KURE` or `GHC.Generics` based traversals. The code for this post can be found [in this gist](https://gist.github.com/Tarmean/c8c986f6c1723be10b7454b53288e989). I have some minor open design questions so it hasn't *quite* made it into a library yet.
@@ -226,4 +226,4 @@ Also, there is a reason fast OOP languages tend to run with a JIT compiler - spe
 Thanks for reading!
 
 
-[1]: I cut out a section about OOP vtables because it wasn't terribly relevant to SYB and made people think this was an OOP blog post.  
+[^1]: I cut out a section about OOP vtables because it wasn't terribly relevant to SYB and made people think this was an OOP blog post.  
