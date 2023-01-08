@@ -75,8 +75,8 @@ So we'll write composable tranformations. How is this approach different from ex
 There are three big points:
 
 - Building transformations using (non-monadic) combinators lets us keep track of which types we can transform, and skip sub-expressions we cannot modify. With SYB, our simple traversals would visit each character contained in the variable names even though no case can match a `Char`. Using an optimization from the lens library this we often gain astonishing wins over base SYB, in the order of 10-100x speedups.
-- Existing frameworks  add recursion using big combinators such as `bottomup :: Trans a -> Trans a` which recursively apply the transformation to each child. The CPS approach is much more expressive, and lets us encode arbitrary traversal orders
-- Open recursion lets us add decorators, such as logging or tracking the bindings of in-scope variables. We write the decorators once and compose them with `decorator >>> _`.
+- Existing frameworks  add recursion using big combinators such as `bottomup :: Trans a -> Trans a` which recursively apply the transformation to each child. The CPS approach is much more expressive, and lets us encode arbitrary traversal orders. Custom ordering lets us use `local` from `MonadReader` to add scoped context!
+- Open recursion lets us build decorators, such as logging or tracking the bindings of in-scope variables. We write the decorators once and compose them with `decorator >>> _`.
 
 
 ### How?
