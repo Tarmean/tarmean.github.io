@@ -58,7 +58,7 @@ freeVarsQ =
 This query is similar to a recursion-schemes fold, where we flatten child-terms using an algebra `f a -> a`. But we have some advantages:
 
 - By having a first-class function we can perform ad-hoc traversal orders, such as looping a transformation until the result stops changing
-- We can work with mutually recursive types. One approach is to build a datatypes-ala-carte sum with `data (:+:) f g a = L (f a) | R (g a)`, and visit all `ExprF :+: LangF` "contained" in a `Lang` value. But this requires boilerplate instances for each combination of visited types.
+- We can work with mutually recursive types. Alternatively, we could build a datatypes-ala-carte sum with `data (:+:) f g a = L (f a) | R (g a)`, and visit all `ExprF :+: LangF` "contained" in a `Lang` value. But this requires boilerplate instances for each combination of visited types.
 
 ### Typing the Data.Data
 
