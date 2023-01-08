@@ -74,7 +74,7 @@ Again we only mention the constructors which matter. Because we use generic prog
 So we'll write composable tranformations. How is this approach different from existing approaches such as  scrap-your-boilerplate?  
 There are three big points:
 
-- Building transformations using (non-monadic) combinators lets us keep track of which types we can transform, and skip sub-expressions we cannot modify. We used `type Var = String` for simplicity. With SYB, our simple traversals would visit each character contained in the variables even though no case can match a `Char`. Using an optimization from the lens library  we often gain astonishing wins over base SYB, in the order of 10-100x speedups.
+- Building transformations using (non-monadic) combinators lets us keep track of which types we can transform, and skip sub-expressions we cannot modify. We used `type Var = String` for simplicity. With SYB, our simple traversals would visit each character contained in the string even though no case can match a `Char`. Using an optimization from the lens library  we often gain astonishing wins over base SYB, in the order of 10-100x speedups.
 - Existing frameworks  add recursion using big combinators such as `bottomup :: Trans a -> Trans a` which recursively apply the transformation to each child. The CPS approach is much more expressive, and lets us encode arbitrary traversal orders. Custom ordering lets us use `local` from `MonadReader` to add scoped context!
 - Open recursion lets us build decorators, such as logging or tracking the bindings of in-scope variables. We write the decorators once and compose them with `decorator >>> _`.
 
