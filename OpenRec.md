@@ -9,8 +9,17 @@ This blog post focuses on concrete implementation based on `scrap your boilerpla
 
 
 Our end goal is to write queries and transformations over mutually recursive types, while only requiring a `deriving Data` on each type:
-
 ```Haskell
+data Expr = Plus Expr Expr | Minus Expr Expr | Lit Int | Ref Var
+   deriving (Eq, Ord, Show, Data)
+ 
+type Var = String
+data Lang = Let { var :: Var, expr :: Expr, body :: Lang } | If Expr Lang Lang
+   deriving (Eq, Ord, Show, Data)
+   
+test :: Lang
+test = If (Plus (Lit 1) (Minus (Ref "x") (Ref "x"))) (Ref "a") (Ref "b")
+
 bottomUp :: Trans m
 bottomUp =
    recurse >>> 
@@ -25,30 +34,14 @@ bottomUp =
               If (Lit i) a b -> Just (if i == 0 then b else a)
               _ -> Nothing
    )
-```
-
-We `recurse` first. This means we do a bottom-up transformation: When we apply the rules, all sub-expressions are already transformed.
-We can apply this transformation like so:
-
-```Haskell
-data Expr = Plus Expr Expr | Minus Expr Expr | Lit Int | Ref Var
-   deriving (Eq, Ord, Show, Data)
- 
-type Var = String
-data Lang = Let { var :: Var, expr :: Expr, body :: Lang } | If Expr Lang Lang
-   deriving (Eq, Ord, Show, Data)
    
-test :: Lang
-test = If (Plus (Lit 1) (Minus (Ref "x") (Ref "x"))) (Ref "a") (Ref "b")
-
 >>> run bottomUp test
 Ref "a"
 ```
-
 We will transform `Minus (Ref "x") (Ref "x")` into `Lit 0`, then `Plus (Lit 1) (Lit 0)` into `Lit 1`, and finally the entire if-statement into `Ref "a"`.
-
 Note that the transformation didn't cover all constructors. The default base-case is the identity transform, and `recurse` automatically targets all child-expressions
-.
+
+
 Here, the datatypes are fairly small so a manual implementation would be easy. Even small real languages are much larger, though, and GHC's typechecking AST has over a hundred  constructors! No wonder Haskell has so many approaches to generic programming.
 
 
