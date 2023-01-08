@@ -79,11 +79,11 @@ By abstracting over an applicative, queries are just a special kind of transform
 freeVarsQ :: (MonadWriter (S.Set Var) m) => Trans m
 freeVarsQ =
      tryQuery_ @Expr \case
-       -- referencing variable is a use
+       -- when we reference a variable, it's used
        Ref v -> Just (Set.singleton v)
        _ -> Nothing
  ||| tryQuery @Lang (\rec -> \case
-      -- But a bound variable is not free
+      -- But we sholdn't count locals
       Let {bindVar, bindExpr, bindBody} -> Just (rec bindExpr <> Set.delete bindVar (rec bindBody))
        _ -> Nothing)
      -- if no other branch matches, recurse into all sub-terms and add them up
