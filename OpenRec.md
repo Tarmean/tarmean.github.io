@@ -40,7 +40,7 @@ bottomUp =
 Ref "a"
 ```
 We will transform `Minus (Ref "x") (Ref "x")` into `Lit 0`, then `Plus (Lit 1) (Lit 0)` into `Lit 1`, and finally the entire if-statement into `Ref "a"`.
-Note that the transformation didn't cover all constructors. The default base-case is the identity transform, and `recurse` automatically targets all child-expressions
+Note that the transformation didn't cover all constructors. The default base-case is the identity transform, and `recurse` automatically targets all sub-fields
 
 
 Here, the datatypes are fairly small so a manual implementation would be easy. Even small real languages are much larger, though, and GHC's typechecking AST has over a hundred  constructors! No wonder Haskell has so many approaches to generic programming.
