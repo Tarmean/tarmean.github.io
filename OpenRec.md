@@ -43,7 +43,7 @@ data Expr = Plus Expr Expr | Minus Expr Expr | Lit Int | Ref Var
    deriving (Eq, Ord, Show, Data)
  
 type Var = String
-data Lang = Let { var :: Var, expr :: Expr, body :: Expr } | If Expr Lang Lang
+data Lang = Let { var :: Var, expr :: Expr, body :: Lang } | If Expr Lang Lang
    deriving (Eq, Ord, Show, Data)
    
 test :: Lang
