@@ -43,7 +43,7 @@ We will transform `Minus (Ref "x") (Ref "x")` into `Lit 0`, then `Plus (Lit 1) (
 Note that the transformation didn't cover all constructors. The default base-case is the identity transform, and `recurse` automatically targets all sub-fields
 
 
-Here, the datatypes are fairly small so a manual implementation would be easy. Even small real languages are much larger, though, and GHC's typechecking AST has over a hundred  constructors! No wonder Haskell has so many approaches to generic programming.
+Here, the datatypes are fairly small so a manual implementation would be easy. Even small real languages are much larger, though, and GHC's typechecking AST has over a hundred  constructors! Imagine the above transformation but there are an extra 98 cases to recurse on child-terms. No wonder Haskell has so many approaches to generic programming.
 
 
 By abstracting over an applicative, queries are just a special kind of transform with a MonadWriter constraint:
