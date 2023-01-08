@@ -5,15 +5,7 @@ The core trick I want to introduce is simple: Adding some knot-tying to continua
 This blog post focuses on concrete implementation based on `scrap your boilerplate`, though it would work for `KURE` or `GHC.Generics` based traversals. The code for this post can be found [in this gist](https://gist.github.com/Tarmean/c8c986f6c1723be10b7454b53288e989). I have some minor open design questions so it hasn't *quite* made it into a library yet.
 
 
-###  Open Recursion in Haskell
-
-The classic approach to abstract over an implementation is vtables, aka records of functions.
-Haskell can do vtables: We could literally pass around records of functions, or make GHC do the legwork by using type-classes. At a surface level these require very different styles:
-
-- Records of functions are just functions which we can manipulate directly
-- Type classes translate into records of functions, but are specified as types. This is why monad-transformer require stacks like `StateT s (WriterT r [])`, we indirectly instruct GHC to compose type-class instances
-
-Type-classes optimize better, but would require a lot of type-level programming to be as expressive. We will just use functions, ending up with a slightly weird continuation-passing-style. 
+###  What?
 
 
 Our end goal is to write queries and transformations over mutually recursive types, while only requiring a `deriving Data` on each type:
@@ -95,6 +87,7 @@ There are three big points:
 
 ### How?
 
+
 To implement this API, we will use the `scrap your boilerplate` approach to generic programming. The type signaturess can be a bit confusing and we are not going to go in-depth. [See here](https://chrisdone.com/posts/data-typeable/) for a full-fledged introduction. Data.Data is also notoriously slow, but we will borrow a neat optimization from the `lens` library. 
 
 The `scrap your boilerplate` approach is based on two key pieces:
@@ -135,8 +128,6 @@ instance Data Lang where
     ...
 ```
 
-## Implementation
-
 Data.Data makes it easy to throw all transformations into one simple shape:
 
 ```Haskell
@@ -148,8 +139,21 @@ tryTrans1 f (x :: tx) = case eqT @a @tx of
    Nothing -> pure x -- keep the old value here
 ```
 
-But it's not really composable yet. We need vtables! 
-For transformations, we often want to distinguish between success and failure branches so we add two distinct continuations, similar to a search monad.
+But it's not really composable yet. We need recursive vtables! 
+
+### What's that about vtables?
+
+When a transformation recurses, succeeds, or fails, we have to decide what to do next. To keep things composable, we want to delay this decision.
+
+The classic approach to abstract over some implementation is vtables, aka records of functions.
+Haskell can do vtables: We could literally pass around records of functions, or make GHC do the legwork by using type-classes. At a surface level these require very different styles:
+
+- Records of functions are just functions which we can manipulate directly
+- Type classes translate into records of functions, but are specified as types. This is why monad-transformer require stacks like `StateT s (WriterT r [])`, we indirectly instruct GHC to compose type-class instances
+
+Type-classes optimize better, but would require a lot of type-level programming to be as expressive. We will just use functions, ending up with a slightly weird continuation-passing-style. 
+
+We stash every possible continuation into a struct for readability:
 
 ```Haskell
 -- | VTable for our traversal
