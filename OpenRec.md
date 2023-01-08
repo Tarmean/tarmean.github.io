@@ -36,7 +36,6 @@ bottomUp =
 ```
 
 We `recurse` first. This means we do a bottom-up transformation: When we apply the rules, all sub-expressions are already transformed.
-
 We can apply this transformation like so:
 
 ```Haskell
@@ -58,7 +57,7 @@ We will transform `Minus (Ref "x") (Ref "x")` into `Lit 0`, then `Plus (Lit 1) (
 
 Note that the transformation didn't cover all constructors. The default base-case is the identity transform, and `recurse` automatically targets all child-expressions
 .
-Here, the datatypes are fairly small so a manual implementation would be easy. Even small real languages are much larger, though, and GHC's typechecking AST has over a hundred of constructors! No wonder Haskell has so many approaches to generic programming.
+Here, the datatypes are fairly small so a manual implementation would be easy. Even small real languages are much larger, though, and GHC's typechecking AST has over a hundred  constructors! No wonder Haskell has so many approaches to generic programming.
 
 
 By abstracting over an applicative, queries are just a special kind of transform with a MonadWriter constraint:
@@ -89,7 +88,7 @@ freeVarsQ =
 So we'll write composable tranformations. How is this approach different from existing approaches such as  scrap-your-boilerplate?  
 There are three big points:
 
-- Building transformations using (non-monadic) combinators lets us keep track of which types we can transform, and skip sub-expressions we cannot not modify. With SYB, our simple traversals would visit each character contained in the variable names even though no case can match a `Char`. Using an optimization from the lens library this often gives astonishing wins over base SYB, in the order of 10-100x speedups.
+- Building transformations using (non-monadic) combinators lets us keep track of which types we can transform, and skip sub-expressions we cannot modify. With SYB, our simple traversals would visit each character contained in the variable names even though no case can match a `Char`. Using an optimization from the lens library this often gives astonishing wins over base SYB, in the order of 10-100x speedups.
 - Existing frameworks  add recursion using big combinators such as `bottomup :: Trans a -> Trans a` which recursively apply the transformation to each child. The CPS approach is much more expressive, and lets us encode arbitrary traversal orders
 - Open recursion lets us add decorators, such as logging or tracking the bindings of in-scope variables. We write the decorators once and compose them with `decorator >>> _`.
 
