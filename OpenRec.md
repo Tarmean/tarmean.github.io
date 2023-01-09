@@ -156,7 +156,7 @@ freeVarsLang a = mconcat (gmapQ freeVarsSYB a)
 In my experience SYB with explicitely  recursive functions invites subtle bugs or infinite loops when we miss a case. 
 We will use a CPS transformation to factor out the recursive `mconcat (gmapQ freeVarsSYB a)` into `recurse`. 
 
-Additionally, the `gmapQ` call doesn't know what we can match so it must visit irrelevant sub-terms and take much more time. Of course we could build a smarter gmapQ and pass the possible targets (`Set.fromList [typeRep @Lang, typeRep @Expr]`) everywhere, but that would be another opportunity for hard-to-debug mistakes.
+Additionally, the `gmapQ` call doesn't know what we can match so it must visit irrelevant sub-terms and take much more time. Of course we could build a smarter gmapQ and pass the possible targets (`Set.fromList [typeRep @Lang, typeRep @Expr]`) everywhere, but manually passing this set would be another opportunity for hard-to-debug mistakes.
 
 
 ### What's that about vtables?
