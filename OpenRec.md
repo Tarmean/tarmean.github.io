@@ -238,7 +238,7 @@ tryTrans f = T relevantTypes containsRecurions transformation
       Nothing -> onFailure a
 ```
 
-To run traversals we have to tie the context knot. Here, we finally use the collected meta-data to use the lens `hitTest` function. Here is where all the recursion lives: `f` uses `ctx`, `ctx` refers to `f`. This is the knot we are tying.
+To run traversals we have to tie the context knot.  Here is where all the recursion lives: `f` uses `ctx`, `ctx` refers to `f`. We also finally use the collected meta-data to use the lens `hitTest` function.
 
 ```Haskell
 runT :: forall m a. (Monad m, Data a) => Trans m -> a -> m a
