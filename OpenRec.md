@@ -137,10 +137,8 @@ tryTrans1 f (x :: tx) = case eqT @a @tx of
    Nothing -> pure x -- keep the old value here
 ```
 ### Is SYB enough?
-Sort of, the recursive CPS style does not add expressiveness. We could re-write the `freeVarsQ` example using plain SYB:
 
-
-But we do not gain anything fundamental, just a nicer API on top of SYB. Even the`freeVarsQ` example with complex recursion is expressible if awkward:
+Do we need anything on top of Data.Data? The recursive CPS style does not add expressiveness, so strictly speaking no. We could re-write the `freeVarsQ` example using plain (if awkward) SYB:
 
 ``` Haskell
 freeVarsSYB :: Data a => a -> S.Set Var
@@ -155,9 +153,9 @@ freeVarsLang (Let expr v body) = freeVarsExpr expr <> S.delete v (freeVarsLang b
 freeVarsLang a = mconcat (gmapQ freeVarsSYB a)
 ```
 
-The `gmapQ` call doesn't know what we can transform, so it must visit all sub-terms so is much less efficient. But we could build a smarter variant and pass it `Set.fromList [typeRep @Lang, typeRep @Expr]` on all recursive calls. 
+The `gmapQ` call doesn't know what we can match, so it must visit all sub-terms and is much less efficient. We could build a smarter variant and pass it `Set.fromList [typeRep @Lang, typeRep @Expr]` as possible targets on all recursive calls, though. 
 
-The bigger problem is the big ball of mutually recursive functions. If we have many mutually recursive types, or many transformation functions, it becomes hard to manage. Missing a case can easily hang the program, or throw a `<<loop>>` if we are lucky. In my experience factoring out the recursion is much nicer! 
+The bigger problem is the big ball of mutually recursive functions. If we have many mutually recursive types, or many transformation functions, it becomes hard to manage. Missing a case can easily hang the program, or throw a `<<loop>>` if we are lucky. The larger the transformation the bigger the pay-off if we factor out this recursion.
 
 ### What's that about vtables?
 
@@ -240,7 +238,7 @@ tryTrans f = T relevantTypes containsRecurions transformation
       Nothing -> onFailure a
 ```
 
-To run traversals we have to tie the context knot. Here, we finally use the collected meta-data to use the lens `hitTest` function:
+To run traversals we have to tie the context knot. Here, we finally use the collected meta-data to use the lens `hitTest` function. Here is where all the recursion lives: `f` uses `ctx`, `ctx` refers to `f`. This is the knot we are tying.
 
 ```Haskell
 runT :: forall m a. (Monad m, Data a) => Trans m -> a -> m a
