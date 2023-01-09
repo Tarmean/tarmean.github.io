@@ -174,6 +174,7 @@ Type-classes optimize better, but would require a lot of type-level programming 
 We stash every possible continuation into a struct for readability:
 
 ```Haskell
+type Trans1 m = (forall x. Data x => x -> m x)
 -- | VTable for our traversal
 data Ctx m = Ctx {
   -- | Transformation when case matched
