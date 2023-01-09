@@ -142,7 +142,7 @@ Do we need anything on top of Data.Data? The recursive CPS style does not add ex
 
 ``` Haskell
 freeVarsSYB :: Data a => a -> S.Set Var
-freeVarsSYB = mkT (mconcat . gmapQ freeVarsSYB) `extT` freeVarsExpr `extT` freeVarsLang
+freeVarsSYB = (mconcat . gmapQ freeVarsSYB) `extT` freeVarsExpr `extT` freeVarsLang
 
 freeVarsExpr :: Expr -> Set.Set Var
 freeVarsExpr (Var v) = S.singleton v
