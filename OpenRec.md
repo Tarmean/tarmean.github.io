@@ -153,9 +153,11 @@ freeVarsLang (Let expr v body) = freeVarsExpr expr <> S.delete v (freeVarsLang b
 freeVarsLang a = mconcat (gmapQ freeVarsSYB a)
 ```
 
-The `gmapQ` call doesn't know what we can match, so it must visit all sub-terms and is much less efficient. We could build a smarter variant and pass it `Set.fromList [typeRep @Lang, typeRep @Expr]` as possible targets on all recursive calls, though. 
+In my experience SYB with explicitely  recursive functions invites subtle bugs or infinite loops when we miss a case. 
+At its core, the CPS factors out the recursive `mconcat (gmapQ freeVarsSYB a)` into `recurse`. 
 
-The bigger problem is the big ball of mutually recursive functions. If we have many mutually recursive types, or many transformation functions, it becomes hard to manage. Missing a case can easily hang the program, or throw a `<<loop>>` if we are lucky. The larger the transformation the bigger the pay-off if we factor out this recursion.
+Additionally, the `gmapQ` call doesn't know what we can match so it must visit irrelevant sub-terms and take much more time. Of course we could build a smarter gmapQ and pass the possible targets (`Set.fromList [typeRep @Lang, typeRep @Expr]`) everywhere, but that would be another opportunity for hard-to-debug mistakes.
+
 
 ### What's that about vtables?
 
