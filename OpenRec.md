@@ -59,11 +59,9 @@ By abstracting over an applicative, queries are just a special kind of transform
 freeVarsQ :: (MonadWriter (Set.Set Var) m) => Trans m
 freeVarsQ =
      tryQuery_ @Expr \case
-       -- when we reference a variable, it's used
        Ref v -> Just (Set.singleton v)
        _ -> Nothing
  ||| tryQuery @Lang (\rec -> \case
-      -- But we sholdn't count locals
       Let {var, expr, body} -> Just (rec expr <> Set.delete var (rec body))
        _ -> Nothing)
  ||| recurse
@@ -82,6 +80,7 @@ There are three big points:
 - Building transformations using (non-monadic) combinators lets us keep track of which types we can transform, and skip sub-expressions we cannot modify. We used `type Var = String` for simplicity. With SYB, our simple traversals would visit each character contained in the string even though no case can match a `Char`. Using an optimization from the lens library  we often gain astonishing wins over base SYB, in the order of 10-100x speedups.
 - Existing frameworks  add recursion using big combinators such as `bottomup :: Trans a -> Trans a` which recursively apply the transformation to each child. The CPS approach is much more expressive, and lets us encode arbitrary traversal orders. Custom ordering lets us use `local` from `MonadReader` to add scoped context!
 - Open recursion lets us build decorators, such as logging or tracking the bindings of in-scope variables. We write the decorators once and compose them with `decorator >>> _`.
+
 
 
 ### How?
@@ -137,8 +136,28 @@ tryTrans1 f (x :: tx) = case eqT @a @tx of
    Just Refl -> f x -- apply the transformation
    Nothing -> pure x -- keep the old value here
 ```
+### Is SYB enough?
+Sort of, the recursive CPS style does not add expressiveness. We could re-write the `freeVarsQ` example using plain SYB:
 
-But it's not really composable yet. We need recursive vtables! 
+
+But we do not gain anything fundamental, just a nicer API on top of SYB. Even the`freeVarsQ` example with complex recursion is expressible if awkward:
+
+``` Haskell
+freeVarsSYB :: Data a => a -> S.Set Var
+freeVarsSYB = mkT (mconcat . gmapQ freeVarsQ) `extT` freeVarsExpr `extT` freeVarsLang
+
+freeVarsExpr :: Expr -> Set.Set Var
+freeVarsExpr (Var v) = S.singleton v
+freeVarsExpr a = mconcat (gmapQ freeVarsSYB a)
+
+freeVarsLang :: Lang -> Set.Set Var
+freeVarsLang (Let expr v body) = freeVarsExpr expr <> S.delete v (freeVarsLang body)
+freeVarsLang a = mconcat (gmapQ freeVarsSYB a)
+```
+
+The `gmapQ` call doesn't know what we can transform, so it must visit all sub-terms so is much less efficient. But we could build a smarter variant and pass it `Set.fromList [typeRep @Lang, typeRep @Expr]` on all recursive calls. 
+
+The bigger problem is the big ball of mutually recursive functions. If we have many mutually recursive types, or many transformation functions, it becomes hard to manage. Missing a case can easily hang the program, or throw a `<<loop>>` if we are lucky. In my experience factoring out the recursion is much nicer! 
 
 ### What's that about vtables?
 
