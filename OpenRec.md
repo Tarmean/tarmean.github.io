@@ -286,9 +286,9 @@ Thanks for reading!
 
 ### Postscript: A larger example
 
-I thought I'd add a bigger example to show how this scales to larger transformation.
+I thought I'd add a bigger example to show how this scales to larger transformations.
 
-In a language we might want to relabel variables so every name is globally unique. This can be useful so that we do not have to bother with name collisions when analysing code. Our logic is the following:
+Occasionally, we may want to relabel variables so that every name is globally unique. This can be useful for pretty-printing or tos implify a code analysis. Our logic will be the following:
 
 - Firstly, relabel all global names
 - Secondly, walk through the expression
