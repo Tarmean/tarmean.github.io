@@ -281,3 +281,72 @@ Thanks for reading!
 
 
 [^1]: I cut out a section about OOP vtables because it wasn't terribly relevant to SYB and made people think this was an OOP blog post.  
+
+
+
+### Postscript: A larger example
+
+I thought I'd add a bigger example to show how this scales to larger transformation.
+
+In a language we might want to relabel variables so every name is globally unique. This can be useful so that we do not have to bother with name collisions when analysing code. Our logic is the following:
+
+- Firstly, relabel all global names
+- Secondly, walk through the expression
+    - When we encounter a local binder, invent a new name for the bound variable. Outside of the scope, we must keep the old name in case of collisions!
+    - When we encounter a reference, replace it with the new label
+
+Using a state monad, we can turn this into two recursive blocks which we execute in sequence:
+
+```Haskell
+locally :: (MonadState s m) => m a -> m a
+locally m = do
+  old <- get
+  a <- m
+  put old
+  pure a
+
+compactVarsT :: (MonadVar m, MonadState (M.Map Var Var) m) => Trans m
+compactVarsT
+  =   block (refreshGlobalVar ||| recurse)
+  >>> loggingM "Global var mappings: " (gets M.toList)
+  >>> block (refreshLocalBinder ||| lookupRenamedVar ||| recurse)
+ where
+  refreshGlobalVar = transM_ \(Source v) -> Source <$> refreshVar v
+  refreshLocalBinder
+    =  tryTransM @Lang (\rec -> \case
+         Bind expr var body -> Just $ do
+              expr <- rec expr
+              locally $ do
+                  var <- refreshVar var
+                  body <- rec body
+                  pure (Bind expr var body)
+         AsyncBind binders body -> Just $ do
+              binders <- traverseOf (each . _2) rec binders
+              locally $ do
+                  binders <- traverseOf (each . _1) refreshVar binders
+                  body <- rec body
+                  pure (AsyncBind binders body)
+         _ -> Nothing)
+    ||| tryTransM @OpLang (\rec -> \case
+         Let var expr body -> Just $ do
+              expr <- rec expr
+              locally $ do
+                  var <- refreshVar var
+                  body <- rec body
+                  pure (Let var expr body)
+         _ -> Nothing)
+  lookupRenamedVar
+     = tryTransM_ @Lang \case
+         LRef r -> Just $ gets (LRef . (M.! r))
+         _ -> Nothing
+     ||| tryTransM_ @Expr \case
+          Ref r -> Just $ gets (Ref . (M.! r))
+          _ -> Nothing
+  refreshVar v = do
+     gets (M.!? v) >>= \case
+       Nothing -> do
+         v' <- genVar (name v)
+         modify (M.insert v v')
+         pure v'
+       Just v' -> pure v'
+ ```
