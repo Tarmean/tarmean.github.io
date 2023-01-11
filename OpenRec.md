@@ -322,6 +322,8 @@ compactVarsT
                   body <- rec body
                   pure (Bind expr var body)
          AsyncBind binders body -> Just $ do
+              -- async binders are independent;
+              -- rewrite the bound expressions before the new names are in scope!
               binders <- traverseOf (each . _2) rec binders
               locally $ do
                   binders <- traverseOf (each . _1) refreshVar binders
