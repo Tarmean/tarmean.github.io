@@ -312,6 +312,7 @@ compactVarsT
   >>> block (refreshLocalBinder ||| lookupRenamedVar ||| recurse)
  where
   refreshGlobalVar = transM_ \(Source v) -> Source <$> refreshVar v
+  
   refreshLocalBinder
     =  tryTransM @Lang (\rec -> \case
          Bind expr var body -> Just $ do
@@ -335,6 +336,7 @@ compactVarsT
                   body <- rec body
                   pure (Let var expr body)
          _ -> Nothing)
+         
   lookupRenamedVar
      = tryTransM_ @Lang \case
          LRef r -> Just $ gets (LRef . (M.! r))
@@ -342,6 +344,7 @@ compactVarsT
      ||| tryTransM_ @Expr \case
           Ref r -> Just $ gets (Ref . (M.! r))
           _ -> Nothing
+          
   refreshVar v = do
      gets (M.!? v) >>= \case
        Nothing -> do
